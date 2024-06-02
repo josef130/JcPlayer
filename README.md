@@ -1,4 +1,4 @@
-[![](https://jitpack.io/v/jeancsanchez/JcPlayer.svg)](https://jitpack.io/#jeancsanchez/JcPlayer)
+[![](https://jitpack.io/v/josef130/JcPlayer.svg)](https://jitpack.io/#josef130/JcPlayer)
 </br></br>
 
 <h1 align=center>
@@ -8,7 +8,7 @@
 A simple audio player for Android that you can plugin to your apps quickly get audio playback working.
 </br></br>
 
-![](https://github.com/jeancsanchez/JcPlayer/blob/master_v2/sample/jcplayer_2.gif)
+![](https://github.com/josef130/JcPlayer/blob/master/sample/jcplayer_2.gif)
 
 ## New features
 - Raw files
@@ -50,7 +50,7 @@ allprojects {
 ```Gradle
 dependencies {
     // ... other dependencies
-     implementation 'com.github.jeancsanchez:JcPlayer:{version}'
+     implementation 'com.github.josef130:JcPlayer:{version}'
 }
 ```
 
