@@ -46,7 +46,7 @@ allprojects {
 	    }
 	}
 ```
-## Gradle Dependency (Module level) 
+## Gradle Dependency (Module level)
 ```Gradle
 dependencies {
     // ... other dependencies
@@ -74,10 +74,10 @@ You only need  a JcPlayerView on your Layout Activity/Fragment. All the controls
 ```java
     ArrayList<JcAudio> jcAudios = new ArrayList<>();
     jcAudios.add(JcAudio.createFromURL("url audio","http://xxx/audio.mp3"));
-    jcAudios.add(JcAudio.createFromAssets("Asset audio", "audio.mp3"));
-    jcAudios.add(JcAudio.createFromRaw("Raw audio", R.raw.audio));
+        jcAudios.add(JcAudio.createFromAssets("Asset audio", "audio.mp3"));
+        jcAudios.add(JcAudio.createFromRaw("Raw audio", R.raw.audio));
 
-    jcplayerView.initPlaylist(jcAudios, null);
+        jcplayerView.initPlaylist(jcAudios, null);
 ```
 
 ### Option 2: Initialize an anonymous playlist with a default title for all
@@ -103,30 +103,30 @@ OR
 ```java
     MyActivity implements JcPlayerManagerListener {
         ....
-        jcplayerView.setJcPlayerManagerListener(this);
-        // Just be happy :D
- }
+    jcplayerView.setJcPlayerManagerListener(this);
+    // Just be happy :D
+}
 ```
 
 ## Custom layout
 You can customize the player layout by manipulating these attributes.
 ```xml
         app:next_icon
-	app:next_icon_color
-	app:pause_icon
-	app:pause_icon_color
-	app:play_icon
-	app:play_icon_color
-	app:previous_icon
-	app:previous_icon_color
-	app:progress_color
-	app:random_icon_color
-	app:repeat_icon
-	app:repeat_icon_color
-	app:seek_bar_color
-	app:text_audio_current_duration_color
-	app:text_audio_duration_color
-	app:text_audio_title_color
+    app:next_icon_color
+    app:pause_icon
+    app:pause_icon_color
+    app:play_icon
+    app:play_icon_color
+    app:previous_icon
+    app:previous_icon_color
+    app:progress_color
+    app:random_icon_color
+    app:repeat_icon
+    app:repeat_icon_color
+    app:seek_bar_color
+    app:text_audio_current_duration_color
+    app:text_audio_duration_color
+    app:text_audio_title_color
 ```
 ### Please, if you liked this project or help you to do your job, support me by being a sponsor <3
 
