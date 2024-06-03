@@ -34,7 +34,7 @@ A simple audio player for Android that you can plugin to your apps quickly get a
 
 You can support us by becoming a patron on Patreon, any support is much appreciated.
 
-[![Patreon](https://c5.patreon.com/external/logo/become_a_patron_button.png)](https://www.patreon.com/jeancsanchez)
+[![Patreon](https://c5.patreon.com/external/logo/become_a_patron_button.png)](https://www.patreon.com/josef130)
 
 
 ## Gradle Dependency (Project level)
