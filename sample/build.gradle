@@ -36,4 +36,7 @@ dependencies {
 //    implementation 'com.github.josef130:JcPlayer:2.7.2'
 
     testImplementation 'junit:junit:4.12'
+
+    // Jcplayer
+    implementation 'com.daimajia.androidanimations:library:2.4@aar'
 }
