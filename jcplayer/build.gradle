@@ -65,5 +65,5 @@ dependencies {
     // Others libraries
     implementation 'com.nineoldandroids:library:2.4.0'
     implementation 'com.daimajia.easing:library:2.4@aar'
-    implementation 'com.daimajia.androidanimations:library:2.4@aar'
+    implementation 'com.daimajia.androidanimations:library:2.2'
 }
