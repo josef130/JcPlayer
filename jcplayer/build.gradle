@@ -7,7 +7,7 @@ group='com.github.jeancsanchez'
 
 
 android {
-    compileSdkVersion 33
+    compileSdkVersion 33 // to 34 Crash
     buildToolsVersion "30.0.3"
     defaultConfig {
         minSdkVersion 14
@@ -41,7 +41,7 @@ dependencies {
 
 
     // Kotlin
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.4.21"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.6.20"
 
     // espresso UI Testing
     // Espresso setup instructions : https://developer.android.com/training/testing/espresso/setup
