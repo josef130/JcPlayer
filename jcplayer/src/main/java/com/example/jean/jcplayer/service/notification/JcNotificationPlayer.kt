@@ -20,13 +20,6 @@ import com.example.jean.jcplayer.general.JcStatus
 import com.example.jean.jcplayer.general.PlayerUtil
 import java.lang.ref.WeakReference
 
-/**
- * This class is a Android [Service] that handles notification changes on background.
- *
- * @author Jean Carlos (Github: @jeancsanchez)
- * @date 12/07/16.
- * Jesus loves you.
- */
 class JcNotificationPlayer private constructor(private val context: Context) :
     JcPlayerManagerListener {
 
@@ -53,7 +46,6 @@ class JcNotificationPlayer private constructor(private val context: Context) :
         private const val PREVIOUS_ID = 1
         private const val PLAY_ID = 2
         private const val PAUSE_ID = 3
-
 
         @Volatile
         private var INSTANCE: WeakReference<JcNotificationPlayer>? = null
@@ -142,6 +134,7 @@ class JcNotificationPlayer private constructor(private val context: Context) :
 
         return remoteView
     }
+
     private fun buildIntentFlags(): Int =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
@@ -162,13 +155,9 @@ class JcNotificationPlayer private constructor(private val context: Context) :
         )
     }
 
-    override fun onPreparedAudio(status: JcStatus) {
+    override fun onPreparedAudio(status: JcStatus) {}
 
-    }
-
-    override fun onCompletedAudio() {
-
-    }
+    override fun onCompletedAudio() {}
 
     override fun onPaused(status: JcStatus) {
         createNotificationPlayer(title, R.drawable.ic_default_notification)
@@ -190,7 +179,6 @@ class JcNotificationPlayer private constructor(private val context: Context) :
         createNotificationPlayer(title, R.drawable.ic_default_notification)
     }
 
-
     fun destroyNotificationIfExists() {
         try {
             notificationManager.cancel(NOTIFICATION_ID)
@@ -200,7 +188,5 @@ class JcNotificationPlayer private constructor(private val context: Context) :
         }
     }
 
-    override fun onJcpError(throwable: Throwable) {
-
-    }
+    override fun onJcpError(throwable: Throwable) {}
 }
