@@ -1,15 +1,19 @@
 package com.example.jean.jcplayer.service.notification
 
+import android.Manifest
+import android.app.Activity
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.os.Build
 import android.widget.RemoteViews
 import androidx.annotation.RequiresApi
+import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC
 import androidx.core.app.NotificationManagerCompat
@@ -25,13 +29,15 @@ class JcNotificationPlayer private constructor(private val context: Context) :
 
     private var title: String? = null
     private var time = "00:00"
-    private var iconResource: Int = 0
+    private var iconResource: Int = R.drawable.default_icon
     private val notificationManager: NotificationManagerCompat by lazy {
         NotificationManagerCompat.from(context)
     }
     private var notification: Notification? = null
 
     companion object {
+        private const val NOTIFICATION_PERMISSION_CODE = 101
+
         const val NEXT = "jcplayer.NEXT"
         const val PREVIOUS = "jcplayer.PREVIOUS"
         const val PAUSE = "jcplayer.PAUSE"
@@ -58,14 +64,26 @@ class JcNotificationPlayer private constructor(private val context: Context) :
     }
 
     fun createNotificationPlayer(title: String?, iconResourceResource: Int) {
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            // If permission isn't granted, request permission or handle accordingly
+            ActivityCompat.requestPermissions(
+                context as Activity,
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                NOTIFICATION_PERMISSION_CODE
+            )
+            return // Exit if permission isn't granted
+        }
+
         this.title = title
-        this.iconResource = R.drawable.default_icon
+        this.iconResource = iconResourceResource
         val openUi = Intent(context, context.javaClass)
         openUi.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
 
         notification = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL)
-            .setSmallIcon(R.drawable.default_icon)
-            .setLargeIcon(BitmapFactory.decodeResource(context.resources, R.drawable.default_icon))
+            .setSmallIcon(iconResourceResource)
+            .setLargeIcon(BitmapFactory.decodeResource(context.resources, iconResourceResource))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContent(createNotificationPlayerView())
             .setSound(null)
@@ -80,23 +98,32 @@ class JcNotificationPlayer private constructor(private val context: Context) :
             .setAutoCancel(false)
             .build()
 
-        @RequiresApi(Build.VERSION_CODES.O)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            createNotificationChannel()
+        }
+
+        try {
+            notification?.let { notificationManager.notify(NOTIFICATION_ID, it) }
+        } catch (e: SecurityException) {
+            e.printStackTrace() // Log or handle SecurityException if permission is revoked
+        }
+    }
+
+    private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 NOTIFICATION_CHANNEL,
-                NOTIFICATION_CHANNEL,
+                "JcPlayer Notifications",
                 NotificationManager.IMPORTANCE_LOW
-            )
-            channel.lockscreenVisibility = VISIBILITY_PUBLIC
-            channel.enableLights(false)
-            channel.enableVibration(false)
-            channel.setSound(null, null)
-
+            ).apply {
+                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+                enableLights(false)
+                enableVibration(false)
+                setSound(null, null)
+            }
             val notificationManager = context.getSystemService(NotificationManager::class.java)
-            notificationManager.createNotificationChannel(channel)
+            notificationManager?.createNotificationChannel(channel)
         }
-
-        notification?.let { notificationManager.notify(NOTIFICATION_ID, it) }
     }
 
     fun updateNotification() {
