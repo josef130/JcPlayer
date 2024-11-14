@@ -2,11 +2,11 @@
 
 buildscript {
     repositories {
-        jcenter()
         google()
+        mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.1.3'
+        classpath 'com.android.tools.build:gradle:8.4.2'
         classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.10"
     }
@@ -14,13 +14,12 @@ buildscript {
 
 allprojects {
     repositories {
-        jcenter()
-        maven { url 'https://jitpack.io' }
         google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
     }
 }
 
 task clean(type: Delete) {
     delete layout.buildDirectory.get().asFileTree
 }
-
