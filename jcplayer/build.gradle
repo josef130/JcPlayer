@@ -9,7 +9,7 @@ group='com.github.jeancsanchez'
 
 android {
     namespace 'com.example.jean.jcplayer'
-    compileSdkVersion 33 // to 34 Crash
+    compileSdkVersion 34
     defaultConfig {
         minSdkVersion 14
         targetSdkVersion 34
