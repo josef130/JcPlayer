@@ -1,14 +1,15 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
+//apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-parcelize'
 apply plugin: 'kotlin-kapt'
 //apply plugin: 'com.github.dcendents.android-maven'
 group='com.github.jeancsanchez'
 
 
 android {
+    namespace 'com.example.jean.jcplayer'
     compileSdkVersion 33 // to 34 Crash
-    buildToolsVersion "30.0.3"
     defaultConfig {
         minSdkVersion 14
         targetSdkVersion 34
@@ -25,6 +26,10 @@ android {
 
     kapt {
         useBuildCache = true
+    }
+
+    buildFeatures {
+        viewBinding = true
     }
 }
 
@@ -47,11 +52,11 @@ dependencies {
     // Espresso setup instructions : https://developer.android.com/training/testing/espresso/setup
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 
-    androidTestImplementation 'androidx.test.espresso:espresso-contrib:3.5.1'
-    androidTestImplementation 'androidx.test.espresso:espresso-idling-resource:3.5.1'
-    androidTestImplementation 'androidx.test.espresso:espresso-intents:3.5.1'
-    androidTestImplementation 'androidx.test:runner:1.5.2'
-    androidTestImplementation 'androidx.test:rules:1.5.0'
+    androidTestImplementation 'androidx.test.espresso:espresso-contrib:3.6.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-idling-resource:3.6.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-intents:3.6.1'
+    androidTestImplementation 'androidx.test:runner:1.6.2'
+    androidTestImplementation 'androidx.test:rules:1.6.1'
 
 
     // dependencies for local unit tests
