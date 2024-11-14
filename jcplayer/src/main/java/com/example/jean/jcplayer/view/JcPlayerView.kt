@@ -7,6 +7,7 @@ import android.content.res.TypedArray
 import android.graphics.PorterDuff
 import android.os.Build
 import android.util.AttributeSet
+import android.view.LayoutInflater
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.SeekBar
@@ -17,12 +18,12 @@ import com.daimajia.androidanimations.library.YoYo
 import com.example.jean.jcplayer.JcPlayerManager
 import com.example.jean.jcplayer.JcPlayerManagerListener
 import com.example.jean.jcplayer.R
+import com.example.jean.jcplayer.databinding.ViewJcplayerBinding
 import com.example.jean.jcplayer.general.JcStatus
 import com.example.jean.jcplayer.general.PlayerUtil.toTimeSongString
 import com.example.jean.jcplayer.general.errors.AudioListNullPointerException
 import com.example.jean.jcplayer.general.errors.OnInvalidPathListener
 import com.example.jean.jcplayer.model.JcAudio
-import kotlinx.android.synthetic.main.view_jcplayer.view.*
 
 
 /**
@@ -38,6 +39,9 @@ class JcPlayerView : LinearLayout, View.OnClickListener, SeekBar.OnSeekBarChange
         JcPlayerManager.getInstance(context).get()!!
     }
 
+    private var _binding: ViewJcplayerBinding? = null
+    private val binding get() = _binding!!
+
     val myPlaylist: List<JcAudio>
         get() = jcPlayerManager.playlist
 
@@ -52,7 +56,6 @@ class JcPlayerView : LinearLayout, View.OnClickListener, SeekBar.OnSeekBarChange
 
     val currentStatus: JcStatus?
         get() = jcPlayerManager.currentStatus
-
 
     var onInvalidPathListener: OnInvalidPathListener? = null
 
@@ -93,47 +96,48 @@ class JcPlayerView : LinearLayout, View.OnClickListener, SeekBar.OnSeekBarChange
     }
 
     private fun init() {
-        View.inflate(context, R.layout.view_jcplayer, this)
+        _binding = ViewJcplayerBinding.inflate(LayoutInflater.from(context), this, true)
 
-        btnNext?.setOnClickListener(this)
-        btnPrev?.setOnClickListener(this)
-        btnPlay?.setOnClickListener(this)
-        btnPause?.setOnClickListener(this)
-        btnRandom?.setOnClickListener(this)
-        btnRepeat?.setOnClickListener(this)
-        btnRepeatOne?.setOnClickListener(this)
-        seekBar?.setOnSeekBarChangeListener(this)
+        binding.btnNext.setOnClickListener(this)
+        binding.btnPrev.setOnClickListener(this)
+        binding.btnPlay.setOnClickListener(this)
+        binding.btnPause.setOnClickListener(this)
+        binding.btnRandom.setOnClickListener(this)
+        binding.btnRepeat.setOnClickListener(this)
+        binding.btnRepeatOne.setOnClickListener(this)
+        binding.seekBar.setOnSeekBarChangeListener(this)
     }
+
 
     private fun setAttributes(attrs: TypedArray) {
         val defaultColor = ResourcesCompat.getColor(resources, android.R.color.black, null)
 
-        txtCurrentMusic?.setTextColor(
+        binding.txtCurrentMusic.setTextColor(
             attrs.getColor(
                 R.styleable.JcPlayerView_text_audio_title_color,
                 defaultColor
             )
         )
-        txtCurrentDuration?.setTextColor(
+        binding.txtCurrentDuration.setTextColor(
             attrs.getColor(
                 R.styleable.JcPlayerView_text_audio_current_duration_color,
                 defaultColor
             )
         )
-        txtDuration?.setTextColor(
+        binding.txtDuration.setTextColor(
             attrs.getColor(
                 R.styleable.JcPlayerView_text_audio_duration_color,
                 defaultColor
             )
         )
 
-        progressBarPlayer?.indeterminateDrawable?.setColorFilter(
+        binding.progressBarPlayer.indeterminateDrawable?.setColorFilter(
             attrs.getColor(
                 R.styleable.JcPlayerView_progress_color,
                 defaultColor
             ), PorterDuff.Mode.SRC_ATOP
         )
-        seekBar?.progressDrawable?.setColorFilter(
+        binding.seekBar.progressDrawable?.setColorFilter(
             attrs.getColor(
                 R.styleable.JcPlayerView_seek_bar_color,
                 defaultColor
@@ -141,80 +145,79 @@ class JcPlayerView : LinearLayout, View.OnClickListener, SeekBar.OnSeekBarChange
         )
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            seekBar?.thumb?.setColorFilter(
+            binding.seekBar.thumb?.setColorFilter(
                 attrs.getColor(
                     R.styleable.JcPlayerView_seek_bar_color,
                     defaultColor
                 ), PorterDuff.Mode.SRC_ATOP
             )
-            // TODO: change thumb color in older versions (14 and 15).
         }
 
-        btnPlay?.setColorFilter(
+        binding.btnPlay.setColorFilter(
             attrs.getColor(
                 R.styleable.JcPlayerView_play_icon_color,
                 defaultColor
             )
         )
-        btnPlay?.setImageResource(
+        binding.btnPlay.setImageResource(
             attrs.getResourceId(
                 R.styleable.JcPlayerView_play_icon,
                 R.drawable.ic_play
             )
         )
 
-        btnPause?.setImageResource(
+        binding.btnPause.setImageResource(
             attrs.getResourceId(
                 R.styleable.JcPlayerView_pause_icon,
                 R.drawable.ic_pause
             )
         )
-        btnPause?.setColorFilter(
+        binding.btnPause.setColorFilter(
             attrs.getColor(
                 R.styleable.JcPlayerView_pause_icon_color,
                 defaultColor
             )
         )
 
-        btnNext?.setColorFilter(
+        binding.btnNext.setColorFilter(
             attrs.getColor(
                 R.styleable.JcPlayerView_next_icon_color,
                 defaultColor
             )
         )
-        btnNext?.setImageResource(
+        binding.btnNext.setImageResource(
             attrs.getResourceId(
                 R.styleable.JcPlayerView_next_icon,
                 R.drawable.ic_next
             )
         )
 
-        btnPrev?.setColorFilter(
+        binding.btnPrev.setColorFilter(
             attrs.getColor(
                 R.styleable.JcPlayerView_previous_icon_color,
                 defaultColor
             )
         )
-        btnPrev?.setImageResource(
+        binding.btnPrev.setImageResource(
             attrs.getResourceId(
                 R.styleable.JcPlayerView_previous_icon,
                 R.drawable.ic_previous
             )
         )
 
-        btnRandom?.setColorFilter(
+        binding.btnRandom.setColorFilter(
             attrs.getColor(
                 R.styleable.JcPlayerView_random_icon_color,
                 defaultColor
             )
         )
-        btnRandomIndicator?.setColorFilter(
+        binding.btnRandomIndicator.setColorFilter(
             attrs.getColor(
                 R.styleable.JcPlayerView_random_icon_color,
                 defaultColor
             )
         )
-        btnRandom?.setImageResource(
+        binding.btnRandom.setImageResource(
             attrs.getResourceId(
                 R.styleable.JcPlayerView_random_icon,
                 R.drawable.ic_shuffle
@@ -222,25 +225,25 @@ class JcPlayerView : LinearLayout, View.OnClickListener, SeekBar.OnSeekBarChange
         )
         attrs.getBoolean(R.styleable.JcPlayerView_show_random_button, true).also { showButton ->
             if (showButton) {
-                btnRandom?.makeVisible()
+                binding.btnRandom.makeVisible()
             } else {
-                btnRandom?.makeInvisible()
+                binding.btnRandom.makeInvisible()
             }
         }
 
-        btnRepeat?.setColorFilter(
+        binding.btnRepeat.setColorFilter(
             attrs.getColor(
                 R.styleable.JcPlayerView_repeat_icon_color,
                 defaultColor
             )
         )
-        btnRepeatIndicator?.setColorFilter(
+        binding.btnRepeatIndicator.setColorFilter(
             attrs.getColor(
                 R.styleable.JcPlayerView_repeat_icon_color,
                 defaultColor
             )
         )
-        btnRepeat?.setImageResource(
+        binding.btnRepeat.setImageResource(
             attrs.getResourceId(
                 R.styleable.JcPlayerView_repeat_icon,
                 R.drawable.ic_repeat
@@ -248,26 +251,25 @@ class JcPlayerView : LinearLayout, View.OnClickListener, SeekBar.OnSeekBarChange
         )
         attrs.getBoolean(R.styleable.JcPlayerView_show_repeat_button, true).also { showButton ->
             if (showButton) {
-                btnRepeat?.makeVisible()
+                binding.btnRepeat.makeVisible()
             } else {
-                btnRepeat?.makeInvisible()
+                binding.btnRepeat.makeInvisible()
             }
         }
 
-        btnRepeatOne?.setColorFilter(
+        binding.btnRepeatOne.setColorFilter(
             attrs.getColor(
                 R.styleable.JcPlayerView_repeat_one_icon_color,
                 attrs.getColor(R.styleable.JcPlayerView_repeat_icon_color, defaultColor)
             )
         )
-        btnRepeatOne?.setImageResource(
+        binding.btnRepeatOne.setImageResource(
             attrs.getResourceId(
                 R.styleable.JcPlayerView_repeat_one_icon,
                 R.drawable.ic_repeat_one
             )
         )
     }
-
     /**
      * Initialize the playlist and controls.
      *
@@ -383,16 +385,16 @@ class JcPlayerView : LinearLayout, View.OnClickListener, SeekBar.OnSeekBarChange
      * Shows the play button on player.
      */
     private fun showPlayButton() {
-        btnPlay?.makeVisible()
-        btnPause?.makeInvisible()
+        binding.btnPlay.makeVisible()
+        binding.btnPause.makeInvisible()
     }
 
     /**
      * Shows the pause button on player.
      */
     private fun showPauseButton() {
-        btnPlay?.makeInvisible()
-        btnPause?.makeVisible()
+        binding.btnPlay.makeInvisible()
+        binding.btnPause.makeVisible()
     }
 
     /**
@@ -458,57 +460,60 @@ class JcPlayerView : LinearLayout, View.OnClickListener, SeekBar.OnSeekBarChange
 
     override fun onClick(view: View) {
         when (view.id) {
-            R.id.btnPlay ->
-                btnPlay?.let {
-                    applyPulseAnimation(it)
+            R.id.btnPlay -> {
+                binding.btnPlay.apply {
+                    applyPulseAnimation(this)
                     continueAudio()
                 }
+            }
 
             R.id.btnPause -> {
-                btnPause?.let {
-                    applyPulseAnimation(it)
+                binding.btnPause.apply {
+                    applyPulseAnimation(this)
                     pause()
                 }
             }
 
-            R.id.btnNext ->
-                btnNext?.let {
-                    applyPulseAnimation(it)
+            R.id.btnNext -> {
+                binding.btnNext.apply {
+                    applyPulseAnimation(this)
                     next()
                 }
+            }
 
-            R.id.btnPrev ->
-                btnPrev?.let {
-                    applyPulseAnimation(it)
+            R.id.btnPrev -> {
+                binding.btnPrev.apply {
+                    applyPulseAnimation(this)
                     previous()
                 }
+            }
 
             R.id.btnRandom -> {
                 jcPlayerManager.onShuffleMode = jcPlayerManager.onShuffleMode.not()
                 if (jcPlayerManager.onShuffleMode) {
-                    btnRandomIndicator?.makeVisible()
+                    binding.btnRandomIndicator.makeVisible()
                 } else {
-                    btnRandomIndicator?.makeInvisible()
+                    binding.btnRandomIndicator.makeInvisible()
                 }
             }
 
 
-            else -> { // Repeat case
+            else -> {
                 jcPlayerManager.activeRepeat()
                 val active = jcPlayerManager.repeatPlaylist or jcPlayerManager.repeatCurrAudio
 
-                btnRepeat?.makeVisible()
-                btnRepeatOne?.makeInvisible()
+                binding.btnRepeat.makeVisible()
+                binding.btnRepeatOne.makeInvisible()
 
                 if (active) {
-                    btnRepeatIndicator?.makeVisible()
+                    binding.btnRepeatIndicator.makeVisible()
                 } else {
-                    btnRepeatIndicator?.makeInvisible()
+                    binding.btnRepeatIndicator.makeInvisible()
                 }
 
                 if (jcPlayerManager.repeatCurrAudio) {
-                    btnRepeatOne?.makeVisible()
-                    btnRepeat?.makeInvisible()
+                    binding.btnRepeatOne.makeVisible()
+                    binding.btnRepeat.makeInvisible()
                 }
             }
         }
@@ -536,8 +541,8 @@ class JcPlayerView : LinearLayout, View.OnClickListener, SeekBar.OnSeekBarChange
         onUpdateTitle(status.jcAudio)
 
         val duration = status.duration.toInt()
-        seekBar?.post { seekBar?.max = duration }
-        txtDuration?.post { txtDuration?.text = toTimeSongString(duration) }
+        binding.seekBar.post { binding.seekBar.max = duration }
+        binding.txtDuration.post { binding.txtDuration.text = toTimeSongString(duration) }
     }
 
     override fun onProgressChanged(seekBar: SeekBar, i: Int, fromUser: Boolean) {
@@ -583,8 +588,8 @@ class JcPlayerView : LinearLayout, View.OnClickListener, SeekBar.OnSeekBarChange
 
     override fun onTimeChanged(status: JcStatus) {
         val currentPosition = status.currentPosition.toInt()
-        seekBar?.post { seekBar?.progress = currentPosition }
-        txtCurrentDuration?.post { txtCurrentDuration?.text = toTimeSongString(currentPosition) }
+        binding.seekBar.post { binding.seekBar.progress = currentPosition }
+        binding.txtCurrentDuration.post { binding.txtCurrentDuration.text = toTimeSongString(currentPosition) }
     }
 
     override fun onPaused(status: JcStatus) {
@@ -617,35 +622,33 @@ class JcPlayerView : LinearLayout, View.OnClickListener, SeekBar.OnSeekBarChange
     }
 
     private fun showProgressBar() {
-        progressBarPlayer?.makeVisible()
-        btnPlay?.makeInvisible()
-        btnPause?.makeInvisible()
+        binding.progressBarPlayer.makeVisible()
+        binding.btnPlay.makeInvisible()
+        binding.btnPause.makeInvisible()
     }
 
     private fun dismissProgressBar() {
-        progressBarPlayer?.makeInvisible()
+        binding.progressBarPlayer.makeInvisible()
         showPauseButton()
     }
 
     private fun onUpdateTitle(audio: JcAudio?) {
-        txtCurrentMusic?.let { textView ->
-            audio?.title?.let { title ->
-                textView.makeVisible()
-                YoYo.with(Techniques.FadeInLeft)
-                    .duration(TITLE_ANIMATION_DURATION.toLong())
-                    .playOn(textView)
+        audio?.title?.let { title ->
+            binding.txtCurrentMusic.makeVisible()
+            YoYo.with(Techniques.FadeInLeft)
+                .duration(TITLE_ANIMATION_DURATION.toLong())
+                .playOn(binding.txtCurrentMusic)
 
-                textView.post { textView.text = title }
-            }
+            binding.txtCurrentMusic.post { binding.txtCurrentMusic.text = title }
         }
     }
 
     private fun resetPlayerInfo() {
-        txtCurrentMusic?.post { txtCurrentMusic.text = "" }
-        seekBar?.post { seekBar?.progress = 0 }
-        txtDuration?.post { txtDuration.text = context.getString(R.string.play_initial_time) }
-        txtCurrentDuration?.post {
-            txtCurrentDuration.text = context.getString(R.string.play_initial_time)
+        binding.txtCurrentMusic.post { binding.txtCurrentMusic.text = "" }
+        binding.seekBar.post { binding.seekBar.progress = 0 }
+        binding.txtDuration.post { binding.txtDuration.text = context.getString(R.string.play_initial_time) }
+        binding.txtCurrentDuration.post {
+            binding.txtCurrentDuration.text = context.getString(R.string.play_initial_time)
         }
     }
 
