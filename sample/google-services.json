@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "14612413738",
+    "project_id": "jcplayer-d3af3",
+    "storage_bucket": "jcplayer-d3af3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:14612413738:android:a16b1cbf9922c1a2c2b253",
+        "android_client_info": {
+          "package_name": "com.example.jean.jcplayersample"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyACe3AHr_YPIaTCZVgOQrWt-2nMiCJ3uSk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
