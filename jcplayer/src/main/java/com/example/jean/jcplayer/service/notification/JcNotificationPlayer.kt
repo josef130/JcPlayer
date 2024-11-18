@@ -11,12 +11,12 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.os.Build
+import android.util.Log
 import android.widget.RemoteViews
-import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import com.example.jean.jcplayer.JcPlayerManager
 import com.example.jean.jcplayer.JcPlayerManagerListener
 import com.example.jean.jcplayer.R
@@ -64,48 +64,64 @@ class JcNotificationPlayer private constructor(private val context: Context) :
     }
 
     fun createNotificationPlayer(title: String?, iconResourceResource: Int) {
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
-            != PackageManager.PERMISSION_GRANTED
-        ) {
-            // If permission isn't granted, request permission or handle accordingly
-            ActivityCompat.requestPermissions(
-                context as Activity,
-                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                NOTIFICATION_PERMISSION_CODE
-            )
-            return // Exit if permission isn't granted
-        }
-
-        this.title = title
-        this.iconResource = iconResourceResource
-        val openUi = Intent(context, context.javaClass)
-        openUi.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-
-        notification = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL)
-            .setSmallIcon(iconResourceResource)
-            .setLargeIcon(BitmapFactory.decodeResource(context.resources, iconResourceResource))
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setContent(createNotificationPlayerView())
-            .setSound(null)
-            .setContentIntent(
-                PendingIntent.getActivity(
-                    context,
-                    NOTIFICATION_ID,
-                    openUi,
-                    buildIntentFlags()
-                )
-            )
-            .setAutoCancel(false)
-            .build()
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            createNotificationChannel()
-        }
-
         try {
+            // Check for permissions
+            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                    context as Activity,
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    NOTIFICATION_PERMISSION_CODE
+                )
+                Log.e("Debug", "POST_NOTIFICATIONS permission not granted")
+                return
+            }
+
+            // Validate resource ID
+            // Validate resource ID with backward-compatible method
+            val drawable = ContextCompat.getDrawable(context, iconResourceResource)
+            if (drawable == null) {
+                throw IllegalArgumentException("Invalid resource ID: $iconResourceResource")
+            }
+
+            this.title = title
+            this.iconResource = iconResourceResource
+            val openUi = Intent(context, context.javaClass).apply {
+                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+            }
+
+            notification = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL)
+                .setSmallIcon(iconResourceResource)
+                .setLargeIcon(BitmapFactory.decodeResource(context.resources, iconResourceResource))
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setContent(createNotificationPlayerView())
+                .setSound(null)
+                .setContentIntent(
+                    PendingIntent.getActivity(
+                        context,
+                        NOTIFICATION_ID,
+                        openUi,
+                        buildIntentFlags()
+                    )
+                )
+                .setAutoCancel(false)
+                .build()
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                createNotificationChannel()
+            }
+
             notification?.let { notificationManager.notify(NOTIFICATION_ID, it) }
         } catch (e: SecurityException) {
-            e.printStackTrace() // Log or handle SecurityException if permission is revoked
+            Log.e("Debug", "SecurityException: ${e.message}")
+            e.printStackTrace()
+        } catch (e: IllegalArgumentException) {
+            Log.e("Debug", "IllegalArgumentException: ${e.message}")
+            e.printStackTrace()
+        } catch (e: Exception) {
+            Log.e("Debug", "Exception: ${e.message}")
+            e.printStackTrace()
         }
     }
 
