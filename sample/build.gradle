@@ -1,7 +1,4 @@
 apply plugin: 'com.android.application'
-apply plugin: 'com.google.gms.google-services' // Firebase
-apply plugin: 'com.google.firebase.crashlytics' // Firebase Crashlytics plugin.
-apply plugin: 'com.google.firebase.firebase-perf' // Apply the Performance Monitoring plugin
 
 android {
     namespace 'com.example.jean.jcplayersample'
@@ -39,8 +36,4 @@ dependencies {
     implementation 'com.daimajia.androidanimations:library:2.4@aar' // Jcplayer
 
     testImplementation 'junit:junit:4.13.2'
-
-    implementation 'com.google.firebase:firebase-analytics:21.3.0'
-    implementation 'com.google.firebase:firebase-crashlytics:18.2.9'
-    implementation 'com.google.firebase:firebase-perf:19.1.1'
 }
