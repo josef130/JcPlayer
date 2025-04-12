@@ -307,4 +307,38 @@ class JcPlayerService : Service(), MediaPlayer.OnPreparedListener, MediaPlayer.O
         onDestroy()
         stopSelf()
     }
+
+    // الحصول على الموضع الحالي
+    fun getCurrentPosition(): Int {
+        return mediaPlayer?.currentPosition ?: 0
+    }
+
+    // الانتقال إلى موضع معين
+    fun seekTo(position: Int) {
+        mediaPlayer?.seekTo(position)
+    }
+
+    // الحصول على حالة التشغيل الحالية
+    fun getPlayerState(): Bundle {
+        return Bundle().apply {
+            putInt("current_position", getCurrentPosition())
+            putBoolean("is_playing", isPlaying)
+            putBoolean("is_paused", isPaused)
+            putSerializable("current_audio", currentAudio)
+        }
+    }
+
+    // استعادة حالة التشغيل
+    fun restorePlayerState(state: Bundle) {
+        val position = state.getInt("current_position", 0)
+        val shouldPlay = state.getBoolean("is_playing", false)
+
+        currentAudio = state.getSerializable("current_audio") as? JcAudio
+        currentAudio?.let { audio ->
+            if (shouldPlay) {
+                play(audio)
+                seekTo(position)
+            }
+        }
+    }
 }

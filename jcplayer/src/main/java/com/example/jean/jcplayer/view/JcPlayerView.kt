@@ -724,4 +724,24 @@ class JcPlayerView : LinearLayout, View.OnClickListener, SeekBar.OnSeekBarChange
             visibility = View.GONE
         }
     }
+
+    // الحصول على الموضع الحالي
+    fun getCurrentPosition(): Int {
+        return jcPlayerManager.getCurrentPosition()
+    }
+
+    // الانتقال إلى موضع معين
+    fun seekTo(position: Int) {
+        jcPlayerManager.seekTo(position)
+    }
+
+    // الحصول على حالة التشغيل الحالية
+    fun savePlayerState(): Bundle {
+        return jcPlayerManager.getPlayerState()
+    }
+
+    // استعادة حالة التشغيل
+    fun restorePlayerState(state: Bundle) {
+        jcPlayerManager.restorePlayerState(state)
+    }
 }
