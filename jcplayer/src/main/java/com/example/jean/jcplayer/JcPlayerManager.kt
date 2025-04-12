@@ -67,16 +67,16 @@ private constructor(private val serviceConnection: JcServiceConnection) : JcPlay
 
         @JvmStatic
         fun getInstance(
-                context: Context,
-                playlist: ArrayList<JcAudio>? = null,
-                listener: JcPlayerManagerListener? = null
+            context: Context,
+            playlist: ArrayList<JcAudio>? = null,
+            listener: JcPlayerManagerListener? = null
         ): WeakReference<JcPlayerManager> = INSTANCE ?: let {
             INSTANCE = WeakReference(
-                    JcPlayerManager(JcServiceConnection(context)).also {
-                        it.context = context
-                        it.playlist = playlist ?: ArrayList()
-                        it.jcPlayerManagerListener = listener
-                    }
+                JcPlayerManager(JcServiceConnection(context)).also {
+                    it.context = context
+                    it.playlist = playlist ?: ArrayList()
+                    it.jcPlayerManagerListener = listener
+                }
             )
             INSTANCE!!
         }
@@ -86,19 +86,19 @@ private constructor(private val serviceConnection: JcServiceConnection) : JcPlay
      * Connects with audio service.
      */
     private fun initService(connectionListener: ((service: JcPlayerService?) -> Unit)? = null) =
-            serviceConnection.connect(
-                    playlist = playlist,
-                    onConnected = { binder ->
-                        jcPlayerService = binder?.service.also { service ->
-                            serviceBound = true
-                            connectionListener?.invoke(service)
-                        } ?: throw JcpServiceDisconnectedError
-                    },
-                    onDisconnected = {
-                        serviceBound = false
-                        throw  JcpServiceDisconnectedError
-                    }
-            )
+        serviceConnection.connect(
+            playlist = playlist,
+            onConnected = { binder ->
+                jcPlayerService = binder?.service.also { service ->
+                    serviceBound = true
+                    connectionListener?.invoke(service)
+                } ?: throw JcpServiceDisconnectedError
+            },
+            onDisconnected = {
+                serviceBound = false
+                throw  JcpServiceDisconnectedError
+            }
+        )
 
     /**
      * Plays the given [JcAudio].
@@ -190,17 +190,17 @@ private constructor(private val serviceConnection: JcServiceConnection) : JcPlay
      */
     fun createNewNotification(iconResource: Int) {
         jcNotificationPlayer
-                ?.createNotificationPlayer(currentAudio?.title, R.drawable.ic_stat_onesignal_default)
-                ?: let {
-                    jcNotificationPlayer = JcNotificationPlayer
-                            .getInstance(context)
-                            .get()
-                            .also { notification ->
-                                jcPlayerManagerListener = notification
-                            }
+            ?.createNotificationPlayer(currentAudio?.title, R.drawable.ic_stat_onesignal_default)
+            ?: let {
+                jcNotificationPlayer = JcNotificationPlayer
+                    .getInstance(context)
+                    .get()
+                    .also { notification ->
+                        jcPlayerManagerListener = notification
+                    }
 
-                    createNewNotification(R.drawable.ic_stat_onesignal_default)
-                }
+                createNewNotification(R.drawable.ic_stat_onesignal_default)
+            }
     }
 
     /**
@@ -208,15 +208,15 @@ private constructor(private val serviceConnection: JcServiceConnection) : JcPlay
      */
     fun updateNotification() {
         jcNotificationPlayer
-                ?.updateNotification()
-                ?: let {
-                    jcNotificationPlayer = JcNotificationPlayer
-                            .getInstance(context)
-                            .get()
-                            .also { jcPlayerManagerListener = it }
+            ?.updateNotification()
+            ?: let {
+                jcNotificationPlayer = JcNotificationPlayer
+                    .getInstance(context)
+                    .get()
+                    .also { jcPlayerManagerListener = it }
 
-                    updateNotification()
-                }
+                updateNotification()
+            }
     }
 
     /**
@@ -351,9 +351,9 @@ private constructor(private val serviceConnection: JcServiceConnection) : JcPlay
      */
     private fun updatePositionAudioList() {
         playlist.indices
-                .singleOrNull { playlist[it] == currentAudio }
-                ?.let { this.currentPositionList = it }
-                ?: let { this.currentPositionList = 0 }
+            .singleOrNull { playlist[it] == currentAudio }
+            ?.let { this.currentPositionList = it }
+            ?: let { this.currentPositionList = 0 }
     }
 
     fun isPlaying(): Boolean {

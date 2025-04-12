@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit
  * Jesus loves you.
  */
 class JcPlayerService : Service(), MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener,
-        MediaPlayer.OnBufferingUpdateListener, MediaPlayer.OnErrorListener {
+    MediaPlayer.OnBufferingUpdateListener, MediaPlayer.OnErrorListener {
 
     private val binder = JcPlayerServiceBinder()
 
@@ -81,29 +81,29 @@ class JcPlayerService : Service(), MediaPlayer.OnPreparedListener, MediaPlayer.O
                         when (jcAudio.origin) {
                             Origin.URL -> it.setDataSource(jcAudio.path)
                             Origin.RAW -> assetFileDescriptor =
-                                    applicationContext.resources.openRawResourceFd(
-                                            Integer.parseInt(jcAudio.path)
-                                    ).also { descriptor ->
+                                applicationContext.resources.openRawResourceFd(
+                                    Integer.parseInt(jcAudio.path)
+                                ).also { descriptor ->
+                                    it.setDataSource(
+                                        descriptor.fileDescriptor,
+                                        descriptor.startOffset,
+                                        descriptor.length
+                                    )
+                                    descriptor.close()
+                                    assetFileDescriptor = null
+                                }
+                            Origin.ASSETS -> {
+                                assetFileDescriptor = applicationContext.assets.openFd(jcAudio.path)
+                                    .also { descriptor ->
                                         it.setDataSource(
-                                                descriptor.fileDescriptor,
-                                                descriptor.startOffset,
-                                                descriptor.length
+                                            descriptor.fileDescriptor,
+                                            descriptor.startOffset,
+                                            descriptor.length
                                         )
+
                                         descriptor.close()
                                         assetFileDescriptor = null
                                     }
-                            Origin.ASSETS -> {
-                                assetFileDescriptor = applicationContext.assets.openFd(jcAudio.path)
-                                        .also { descriptor ->
-                                            it.setDataSource(
-                                                    descriptor.fileDescriptor,
-                                                    descriptor.startOffset,
-                                                    descriptor.length
-                                            )
-
-                                            descriptor.close()
-                                            assetFileDescriptor = null
-                                        }
                             }
                             Origin.FILE_PATH ->
                                 it.setDataSource(applicationContext, Uri.parse(jcAudio.path))
@@ -250,7 +250,7 @@ class JcPlayerService : Service(), MediaPlayer.OnPreparedListener, MediaPlayer.O
             Origin.RAW -> {
                 assetFileDescriptor = null
                 assetFileDescriptor =
-                        applicationContext.resources.openRawResourceFd(Integer.parseInt(path))
+                    applicationContext.resources.openRawResourceFd(Integer.parseInt(path))
                 return assetFileDescriptor != null
             }
 
@@ -306,39 +306,5 @@ class JcPlayerService : Service(), MediaPlayer.OnPreparedListener, MediaPlayer.O
     fun finalize() {
         onDestroy()
         stopSelf()
-    }
-
-    // الحصول على الموضع الحالي
-    fun getCurrentPosition(): Int {
-        return mediaPlayer?.currentPosition ?: 0
-    }
-
-    // الانتقال إلى موضع معين
-    fun seekTo(position: Int) {
-        mediaPlayer?.seekTo(position)
-    }
-
-    // الحصول على حالة التشغيل الحالية
-    fun getPlayerState(): Bundle {
-        return Bundle().apply {
-            putInt("current_position", getCurrentPosition())
-            putBoolean("is_playing", isPlaying)
-            putBoolean("is_paused", isPaused)
-            putSerializable("current_audio", currentAudio)
-        }
-    }
-
-    // استعادة حالة التشغيل
-    fun restorePlayerState(state: Bundle) {
-        val position = state.getInt("current_position", 0)
-        val shouldPlay = state.getBoolean("is_playing", false)
-
-        currentAudio = state.getSerializable("current_audio") as? JcAudio
-        currentAudio?.let { audio ->
-            if (shouldPlay) {
-                play(audio)
-                seekTo(position)
-            }
-        }
     }
 }
