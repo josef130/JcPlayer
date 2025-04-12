@@ -11,7 +11,7 @@ A simple audio player for Android that you can plugin to your apps quickly get a
 ![](https://github.com/josef130/JcPlayer/blob/master/sample/jcplayer_2.gif)
 
 ## New features
-- Raw files
+- Raw filesنننننن
 - Asset Files
 - Custom layout
 
