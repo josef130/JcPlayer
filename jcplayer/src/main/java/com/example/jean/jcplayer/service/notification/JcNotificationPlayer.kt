@@ -1,7 +1,6 @@
 package com.example.jean.jcplayer.service.notification
 
 import android.Manifest
-import android.app.Activity
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -12,11 +11,12 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.support.v4.media.session.MediaSessionCompat
 import android.util.Log
-import android.widget.RemoteViews
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.media.app.NotificationCompat.MediaStyle
 import com.example.jean.jcplayer.JcPlayerManager
 import com.example.jean.jcplayer.JcPlayerManagerListener
 import com.example.jean.jcplayer.R
@@ -24,70 +24,60 @@ import com.example.jean.jcplayer.general.JcStatus
 import com.example.jean.jcplayer.general.PlayerUtil
 import java.lang.ref.WeakReference
 
-class JcNotificationPlayer private constructor(private val context: Context) :
-    JcPlayerManagerListener {
-
-    private val mainHandler = Handler(Looper.getMainLooper())
-    // Notification state, RemoteViews and framework calls have one main-thread owner.
+class JcNotificationPlayer private constructor(context: Context) : JcPlayerManagerListener {
+    private val context = context.applicationContext
+    private val handler = Handler(Looper.getMainLooper())
     private var title: String? = null
     private var time = "00:00"
-    private var iconResource: Int = R.drawable.default_icon
-    private var pausedState: Boolean? = null
+    private var duration = 0L
+    private var iconResource = R.drawable.default_icon
+    private var paused = true
     private var stopped = false
     private var channelCreated = false
-    private var permissionRequested = false
     private var frameworkFailureLogged = false
     private var lastPublishedState: DisplayState? = null
-    private val notificationManager: NotificationManagerCompat by lazy {
-        NotificationManagerCompat.from(context)
-    }
+    private var sessionToken: MediaSessionCompat.Token? = null
+    private var publisher: ((Notification) -> Unit)? = null
+    private val notificationManager by lazy { NotificationManagerCompat.from(this.context) }
     private val actionIntents = mutableMapOf<String, PendingIntent>()
     private val contentIntent: PendingIntent? by lazy {
-        val openUi = if (context is Activity) Intent(context, context.javaClass)
-            else context.packageManager.getLaunchIntentForPackage(context.packageName)
-        openUi?.let {
+        this.context.packageManager.getLaunchIntentForPackage(this.context.packageName)?.let {
             it.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            PendingIntent.getActivity(context, NOTIFICATION_ID, it, buildIntentFlags())
+            PendingIntent.getActivity(this.context, NOTIFICATION_ID, it, buildIntentFlags())
         }
     }
-
-    private data class DisplayState(val title: String?, val time: String, val icon: Int, val paused: Boolean)
-    private data class Progress(val title: String, val time: String)
+    private val applicationName by lazy {
+        this.context.applicationInfo.loadLabel(this.context.packageManager).toString()
+    }
+    private data class DisplayState(val title: String?, val time: String, val duration: Long, val icon: Int, val paused: Boolean)
+    private data class Progress(val title: String, val time: String, val duration: Long)
     private val progressLock = Any()
     private var pendingProgress: Progress? = null
     private val publishProgress = Runnable {
-        val progress = synchronized(progressLock) {
-            pendingProgress.also { pendingProgress = null }
-        }
+        val progress = synchronized(progressLock) { pendingProgress.also { pendingProgress = null } }
         if (progress != null && !stopped) {
             title = progress.title
             time = progress.time
+            duration = progress.duration
             renderNotification()
         }
     }
 
     companion object {
         private const val TAG = "JcNotificationPlayer"
-        private const val NOTIFICATION_PERMISSION_CODE = 101
         const val NEXT = "jcplayer.NEXT"
         const val PREVIOUS = "jcplayer.PREVIOUS"
         const val PAUSE = "jcplayer.PAUSE"
         const val PLAY = "jcplayer.PLAY"
+        const val STOP = "jcplayer.STOP"
         const val ACTION = "jcplayer.ACTION"
         const val PLAYLIST = "jcplayer.PLAYLIST"
         const val CURRENT_AUDIO = "jcplayer.CURRENT_AUDIO"
-        private const val NOTIFICATION_ID = 100
+        internal const val NOTIFICATION_ID = 100
         private const val NOTIFICATION_CHANNEL = "jcplayer.NOTIFICATION_CHANNEL"
-        private const val NEXT_ID = 0
-        private const val PREVIOUS_ID = 1
-        private const val PLAY_ID = 2
-        private const val PAUSE_ID = 3
+        @Volatile private var INSTANCE: WeakReference<JcNotificationPlayer>? = null
 
-        @Volatile
-        private var INSTANCE: WeakReference<JcNotificationPlayer>? = null
-
-        @JvmStatic
-        @Synchronized
+        @JvmStatic @Synchronized
         fun getInstance(context: Context): WeakReference<JcNotificationPlayer> {
             val existing = INSTANCE
             return if (existing?.get() != null) existing else
@@ -95,12 +85,35 @@ class JcNotificationPlayer private constructor(private val context: Context) :
         }
     }
 
-    // Zero is the default-argument sentinel. Resolve the chosen icon on the owning
-    // thread, rather than capturing a stale icon while another caller changes it.
+    internal fun attachSession(token: MediaSessionCompat.Token, publish: (Notification) -> Unit) {
+        sessionToken = token
+        publisher = publish
+        lastPublishedState = null
+    }
+
+    internal fun detachSession(token: MediaSessionCompat.Token) {
+        if (sessionToken == token) {
+            sessionToken = null
+            publisher = null
+            lastPublishedState = null
+        }
+    }
+
+    internal fun updateMediaState(title: String?, duration: Long, position: Long, playing: Boolean, force: Boolean = false) {
+        onMainThread {
+            this.title = title
+            this.duration = duration
+            this.time = PlayerUtil.toTimeSongString(position.coerceAtLeast(0).toInt())
+            paused = !playing
+            stopped = false
+            renderNotification(force)
+        }
+    }
+
     @JvmOverloads
     fun createNotificationPlayer(title: String?, iconResourceResource: Int = 0) {
         onMainThread {
-            this.title = title
+            if (title != null) this.title = title
             if (iconResourceResource != 0) iconResource = iconResourceResource
             stopped = false
             renderNotification(force = true)
@@ -108,71 +121,67 @@ class JcNotificationPlayer private constructor(private val context: Context) :
     }
 
     private fun onMainThread(action: () -> Unit) {
-        if (Looper.myLooper() == Looper.getMainLooper()) action()
-        else mainHandler.post { action() }
+        if (Looper.myLooper() == Looper.getMainLooper()) action() else handler.post { action() }
     }
 
     private fun renderNotification(force: Boolean = false) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED) {
-            if (!permissionRequested && context is Activity && !context.isFinishing && !context.isDestroyed) {
-                permissionRequested = true
-                ActivityCompat.requestPermissions(context,
-                    arrayOf(Manifest.permission.POST_NOTIFICATIONS), NOTIFICATION_PERMISSION_CODE)
-            }
-            return
-        }
-        permissionRequested = false
-        val state = DisplayState(title, time, iconResource,
-            pausedState ?: (JcPlayerManager.getInstance(context).get()?.isPaused() == true))
+        if (title == null) return
+        // Notifications backed by a valid media session are exempt from Android 13's
+        // POST_NOTIFICATIONS gate. Do not request Activity permissions from a Service.
+        if (sessionToken == null && Build.VERSION.SDK_INT >= 33 &&
+            ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return
+        val state = DisplayState(title, time, duration, iconResource, paused)
         if (!force && state == lastPublishedState) return
         createNotificationChannel()
-        // The custom RemoteViews already contain artwork. Never decode the host's
-        // small-icon drawable into a full-resolution Bitmap on every progress tick.
-        val notification = baseBuilder(state)
-            .setContent(createNotificationPlayerView(state))
-            .build()
-        if (notifySafely(notification, state)) lastPublishedState = state
+        val builder = baseBuilder(state)
+            .addAction(R.drawable.ic_previous_white, context.getString(R.string.jc_media_previous), buildPendingIntent(PREVIOUS, 1))
+            .addAction(if (state.paused) R.drawable.ic_play_white else R.drawable.ic_pause_white,
+                context.getString(if (state.paused) R.string.jc_media_play else R.string.jc_media_pause),
+                buildPendingIntent(if (state.paused) PLAY else PAUSE, if (state.paused) 2 else 3))
+            .addAction(R.drawable.ic_next_white, context.getString(R.string.jc_media_next), buildPendingIntent(NEXT, 0))
+            .setStyle(MediaStyle().setMediaSession(sessionToken).setShowActionsInCompactView(0, 1, 2))
+        if (notifySafely(builder.build(), state)) lastPublishedState = state
     }
 
-    private fun baseBuilder(state: DisplayState) =
-        NotificationCompat.Builder(context, NOTIFICATION_CHANNEL)
-            .setSmallIcon(state.icon)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setSound(null)
-            .setOnlyAlertOnce(true)
-            .setContentIntent(contentIntent)
-            .setAutoCancel(false)
+    private fun baseBuilder(state: DisplayState) = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL)
+        .setSmallIcon(state.icon)
+        .setContentTitle(state.title ?: applicationName)
+        .setContentText(applicationName)
+        .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
+        .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+        .setPriority(NotificationCompat.PRIORITY_LOW)
+        .setShowWhen(false)
+        .setSound(null)
+        .setOnlyAlertOnce(true)
+        .setOngoing(!state.paused)
+        .setContentIntent(contentIntent)
+        .setDeleteIntent(buildPendingIntent(STOP, 4))
+
+    private fun post(notification: Notification) {
+        publisher?.invoke(notification) ?: notificationManager.notify(NOTIFICATION_ID, notification)
+    }
 
     private fun notifySafely(notification: Notification, state: DisplayState): Boolean {
         try {
-            notificationManager.notify(NOTIFICATION_ID, notification)
+            post(notification)
             return true
         } catch (error: SecurityException) {
             Log.w(TAG, "Notification permission unavailable", error)
         } catch (error: ArrayIndexOutOfBoundsException) {
-            // Some framework ArraySet implementations fail inside notify(). Retry
-            // once with a simple system layout; never crash audio for a failed post.
             if (!frameworkFailureLogged) Log.w(TAG, "Framework notification failure; using simple layout", error)
             frameworkFailureLogged = true
             try {
-                notificationManager.notify(NOTIFICATION_ID, baseBuilder(state)
-                    .setContentTitle(state.title).setContentText(state.time).build())
+                post(baseBuilder(state).setStyle(MediaStyle().setMediaSession(sessionToken)).build())
                 return true
-            } catch (retry: ArrayIndexOutOfBoundsException) {
-                return false
-            } catch (retry: SecurityException) {
-                return false
-            }
+            } catch (retry: ArrayIndexOutOfBoundsException) { return false }
+            catch (retry: SecurityException) { return false }
         }
         return false
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !channelCreated) {
-            val channel = NotificationChannel(NOTIFICATION_CHANNEL, "JcPlayer Notifications",
-                NotificationManager.IMPORTANCE_LOW).apply {
+        if (Build.VERSION.SDK_INT >= 26 && !channelCreated) {
+            val channel = NotificationChannel(NOTIFICATION_CHANNEL, "JcPlayer media playback", NotificationManager.IMPORTANCE_LOW).apply {
                 lockscreenVisibility = Notification.VISIBILITY_PUBLIC
                 enableLights(false)
                 enableVibration(false)
@@ -185,90 +194,50 @@ class JcNotificationPlayer private constructor(private val context: Context) :
         }
     }
 
-    fun updateNotification() {
-        onMainThread { if (!stopped) renderNotification() }
+    fun updateNotification() = onMainThread { if (!stopped) renderNotification() }
+
+    private fun buildIntentFlags() = if (Build.VERSION.SDK_INT >= 23)
+        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT else PendingIntent.FLAG_UPDATE_CURRENT
+
+    private fun buildPendingIntent(action: String, id: Int): PendingIntent = actionIntents.getOrPut(action) {
+        val intent = Intent(context, JcPlayerNotificationReceiver::class.java).putExtra(ACTION, action)
+        PendingIntent.getBroadcast(context, id, intent, buildIntentFlags())
     }
-
-    private fun createNotificationPlayerView(state: DisplayState): RemoteViews {
-        val remoteView = RemoteViews(context.packageName,
-            if (state.paused) R.layout.layout_paused_notification else R.layout.layout_playing_notification)
-        if (state.paused) {
-            remoteView.setOnClickPendingIntent(R.id.btn_play_notification, buildPendingIntent(PLAY, PLAY_ID))
-        } else {
-            remoteView.setOnClickPendingIntent(R.id.btn_pause_notification, buildPendingIntent(PAUSE, PAUSE_ID))
-        }
-        remoteView.setTextViewText(R.id.txt_current_music_notification, state.title)
-        remoteView.setTextViewText(R.id.txt_duration_notification, state.time)
-        remoteView.setImageViewResource(R.id.icon_player, R.drawable.ic_default_notification)
-        remoteView.setOnClickPendingIntent(R.id.btn_next_notification, buildPendingIntent(NEXT, NEXT_ID))
-        remoteView.setOnClickPendingIntent(R.id.btn_prev_notification, buildPendingIntent(PREVIOUS, PREVIOUS_ID))
-        return remoteView
-    }
-
-    private fun buildIntentFlags(): Int =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        else PendingIntent.FLAG_UPDATE_CURRENT
-
-    private fun buildPendingIntent(action: String, id: Int): PendingIntent =
-        actionIntents.getOrPut(action) {
-            val intent = Intent(context.applicationContext, JcPlayerNotificationReceiver::class.java)
-            intent.putExtra(ACTION, action)
-            PendingIntent.getBroadcast(context.applicationContext, id, intent, buildIntentFlags())
-        }
 
     override fun onPreparedAudio(status: JcStatus) = onPlaying(status)
     override fun onCompletedAudio() {}
-
-    override fun onPaused(status: JcStatus) {
-        val nextTitle = status.jcAudio?.title
-        onMainThread {
-            pausedState = true
-            if (nextTitle != null) title = nextTitle
-            if (!stopped) renderNotification()
-        }
+    override fun onPaused(status: JcStatus) = onMainThread {
+        paused = true
+        status.jcAudio?.title?.let { title = it }
+        if (!stopped) renderNotification()
     }
-
     override fun onStopped(status: JcStatus) = destroyNotificationIfExists()
     override fun onContinueAudio(status: JcStatus) = onPlaying(status)
-
-    override fun onPlaying(status: JcStatus) {
-        val nextTitle = status.jcAudio?.title
-        onMainThread {
-            stopped = false
-            pausedState = false
-            if (nextTitle != null) title = nextTitle
-            renderNotification()
-        }
+    override fun onPlaying(status: JcStatus) = onMainThread {
+        stopped = false
+        paused = false
+        status.jcAudio?.title?.let { title = it }
+        renderNotification()
     }
-
     override fun onTimeChanged(status: JcStatus) {
         val audio = status.jcAudio ?: return
-        val progress = Progress(audio.title, PlayerUtil.toTimeSongString(status.currentPosition.toInt()))
+        val progress = Progress(audio.title, PlayerUtil.toTimeSongString(status.currentPosition.toInt()), status.duration)
         val needsPost = synchronized(progressLock) {
             val wasEmpty = pendingProgress == null
             pendingProgress = progress
             wasEmpty
         }
-        if (needsPost) mainHandler.post(publishProgress)
+        if (needsPost) handler.post(publishProgress)
     }
-
-    fun destroyNotificationIfExists() {
-        onMainThread {
-            stopped = true
-            mainHandler.removeCallbacks(publishProgress)
-            synchronized(progressLock) { pendingProgress = null }
-            lastPublishedState = null
-            try {
-                // A player must never cancel unrelated push notifications.
-                notificationManager.cancel(NOTIFICATION_ID)
-            } catch (error: ArrayIndexOutOfBoundsException) {
-                Log.w(TAG, "Framework notification cancellation failed", error)
-            } catch (error: SecurityException) {
-                Log.w(TAG, "Notification cancellation unavailable", error)
-            }
-        }
+    fun destroyNotificationIfExists() = onMainThread {
+        stopped = true
+        title = null
+        handler.removeCallbacks(publishProgress)
+        synchronized(progressLock) { pendingProgress = null }
+        lastPublishedState = null
+        try { notificationManager.cancel(NOTIFICATION_ID) }
+        catch (error: ArrayIndexOutOfBoundsException) { Log.w(TAG, "Framework cancellation failed", error) }
+        catch (error: SecurityException) { Log.w(TAG, "Notification cancellation unavailable", error) }
     }
-
     override fun onJcpError(throwable: Throwable) {}
 }

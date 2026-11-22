@@ -51,43 +51,8 @@ public class MainActivity extends AppCompatActivity
         player = findViewById(R.id.jcplayer);
 
         ArrayList<JcAudio> jcAudios = new ArrayList<>();
-        jcAudios.add(JcAudio.createFromURL("url audio", "http://www.villopim.com.br/android/Music_01.mp3"));
-        jcAudios.add(JcAudio.createFromURL("url audio 2", "http://www.villopim.com.br/android/Music_02.mp3"));
-        jcAudios.add(JcAudio.createFromURL("url audio 3", "https://firebasestorage.googleapis.com/v0/b/musyc-f264f.appspot.com/o/Karone-Okarone-Minar-Rahman-Official-Music-Video-Eagle-Music.mp3?alt=media&token=a40ed28a-2970-4160-ac1d-33881e34253a"));
-//        player.playAudio(player.getMyPlaylist().get(0));
-
-//        ArrayList<JcAudio> jcAudios = new ArrayList<>();
-//        jcAudios.add(JcAudio.createFromAssets("Asset audio 1", "49.v4.mid"));
-//        jcAudios.add(JcAudio.createFromAssets("Asset audio 2", "56.mid"));
-//        jcAudios.add(JcAudio.createFromAssets("Asset audio 3", "a_34.mp3"));
-//        jcAudios.add(JcAudio.createFromRaw("Raw audio 1", R.raw.a_34));
-        jcAudios.add(JcAudio.createFromRaw("Raw audio 2", R.raw.a_203));
-        //jcAudios.add(JcAudio.createFromFilePath("File directory audio", this.getFilesDir() + "/" + "CANTO DA GRAÚNA.mp3"));
-        //jcAudios.add(JcAudio.createFromAssets("I am invalid audio", "aaa.mid")); // invalid assets file
-//        player.initPlaylist(jcAudios);
-
-
-//        jcAudios.add(JcAudio.createFromFilePath("test", this.getFilesDir() + "/" + "13.mid"));
-//        jcAudios.add(JcAudio.createFromFilePath("test", this.getFilesDir() + "/" + "123123.mid")); // invalid file path
-//        jcAudios.add(JcAudio.createFromAssets("49.v4.mid"));
-//        jcAudios.add(JcAudio.createFromRaw(R.raw.a_203));
-//        jcAudios.add(JcAudio.createFromRaw("a_34", R.raw.a_34));
-//        player.initWithTitlePlaylist(jcAudios, "Awesome music");
-
-
-//        jcAudios.add(JcAudio.createFromFilePath("test", this.getFilesDir() + "/" + "13.mid"));
-//        jcAudios.add(JcAudio.createFromFilePath("test", this.getFilesDir() + "/" + "123123.mid")); // invalid file path
-//        jcAudios.add(JcAudio.createFromAssets("49.v4.mid"));
-//        jcAudios.add(JcAudio.createFromRaw(R.raw.a_203));
-//        jcAudios.add(JcAudio.createFromRaw("a_34", R.raw.a_34));
-//        player.initAnonPlaylist(jcAudios);
-
-//        Adding new audios to playlist
-//        player.addAudio(JcAudio.createFromURL("url audio","http://www.villopim.com.br/android/Music_01.mp3"));
-//        player.addAudio(JcAudio.createFromAssets("49.v4.mid"));
-//        player.addAudio(JcAudio.createFromRaw(R.raw.a_34));
-//        player.addAudio(JcAudio.createFromFilePath(this.getFilesDir() + "/" + "121212.mmid"));
-
+        jcAudios.add(JcAudio.createFromRaw("JcPlayer 2.8.0 - Local music", R.raw.a_34));
+        jcAudios.add(JcAudio.createFromRaw("JcPlayer 2.8.0 - Local MIDI", R.raw.a_203));
         player.initPlaylist(jcAudios, this);
         adapterSetup();
     }
@@ -134,7 +99,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        player.kill();
+        // Playback is owned by the service; use the system Stop control to end it.
     }
 
     @Override

@@ -1,3 +1,13 @@
+# 2.8.0 (pre-release)
+
+- Replace custom RemoteViews notifications with AndroidX MediaStyle and an active MediaSessionCompat, so Android controls the media panel appearance.
+- Publish track title, duration, position and playback state; support system play, pause, previous, next, seek and stop controls, including the lock screen where device settings allow.
+- Run active playback in a mediaPlayback foreground service. Retain the session when the Activity is closed; stop explicitly with the player stop/kill API.
+- Request audio focus before playback. Pause on permanent loss; resume after transient loss only if the user has not paused or stopped. Pause on headphone disconnection.
+- Serialize playback/progress on the main looper and close raw/asset descriptors after loading.
+- Preserve stable small icons and the 2.7.9 notification memory/framework-crash protections; no full-resolution artwork decoding.
+- Keep the existing MediaPlayer/JcPlayer API and minSdk 14. Add AndroidX Media 1.6.0 and foreground-service/wake-lock manifest declarations.
+- Include an offline sample playlist and 24 automated regression/integration tests. Physical-device verification remains pending when no ADB device is connected.
 # 2.7.9 (pre-release)
 
 - Preserve the 2.7.8 notification memory and crash fixes.

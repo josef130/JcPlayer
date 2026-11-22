@@ -17,6 +17,8 @@ class JcPlayerNotificationReceiver : BroadcastReceiver() {
         }
 
         when (action) {
+            JcNotificationPlayer.STOP -> jcPlayerManager.get()?.stopAudio()
+
             JcNotificationPlayer.PLAY -> try {
                 jcPlayerManager.get()?.continueAudio()
                 jcPlayerManager.get()?.updateNotification()

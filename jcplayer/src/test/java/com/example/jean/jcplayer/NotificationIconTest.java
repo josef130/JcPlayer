@@ -68,6 +68,7 @@ public class NotificationIconTest {
     }
 
     @Test public void viewForwardsCustomIconAndDefaultCallPreservesItAcrossBackgroundReturn() {
+        notificationPlayer.createNotificationPlayer("Track");
         JcPlayerView view = new JcPlayerView(activity);
         view.createNotification(R.drawable.ic_default_notification);
         assertIcon(R.drawable.ic_default_notification);
@@ -85,7 +86,7 @@ public class NotificationIconTest {
         updateEveryState(R.drawable.default_icon);
     }
 
-    @Test public void customIconSelectedBeforePermissionGrantIsRetained() {
+    @Test public void mediaSessionNotificationWorksWithoutOrdinaryNotificationPermission() {
         Shadows.shadowOf(activity.getApplication()).denyPermissions(Manifest.permission.POST_NOTIFICATIONS);
         notificationPlayer.createNotificationPlayer("Track", R.drawable.ic_default_notification);
         Shadows.shadowOf(activity.getApplication()).grantPermissions(Manifest.permission.POST_NOTIFICATIONS);
@@ -96,7 +97,8 @@ public class NotificationIconTest {
         notificationPlayer.createNotificationPlayer("Track", R.drawable.ic_default_notification);
         Notification posted = latestNotification();
         assertNull(posted.getLargeIcon());
-        assertNotNull(posted.contentView);
+        assertNull(posted.contentView);
+        assertEquals("android.app.Notification$MediaStyle", posted.extras.getString("android.template"));
     }
 
     @Test public void duplicateProgressWithinSameSecondDoesNotRebuildNotification() {
@@ -179,21 +181,21 @@ public class NotificationIconTest {
     @Test public void continuingPausedAudioRestoresPauseControlInPlayingLayout() {
         notificationPlayer.createNotificationPlayer("Track", R.drawable.ic_default_notification);
         notificationPlayer.onPaused(status);
-        assertEquals(R.layout.layout_paused_notification, latestNotification().contentView.getLayoutId());
+        assertEquals(R.drawable.ic_play_white, latestNotification().actions[1].icon);
         notificationPlayer.onContinueAudio(status);
-        assertEquals(R.layout.layout_playing_notification, latestNotification().contentView.getLayoutId());
+        assertEquals(R.drawable.ic_pause_white, latestNotification().actions[1].icon);
         assertIcon(R.drawable.ic_default_notification);
     }
     @Test public void newlyPreparedTrackRestoresPlayingControlsAfterPauseAndStop() {
         notificationPlayer.createNotificationPlayer("Track", R.drawable.ic_default_notification);
         notificationPlayer.onPaused(status);
         notificationPlayer.onPreparedAudio(status);
-        assertEquals(R.layout.layout_playing_notification, latestNotification().contentView.getLayoutId());
+        assertEquals(R.drawable.ic_pause_white, latestNotification().actions[1].icon);
         notificationPlayer.onStopped(status);
         assertNull(latestNotification());
         notificationPlayer.onPreparedAudio(status);
         assertNotNull(latestNotification());
-        assertEquals(R.layout.layout_playing_notification, latestNotification().contentView.getLayoutId());
+        assertEquals(R.drawable.ic_pause_white, latestNotification().actions[1].icon);
         assertIcon(R.drawable.ic_default_notification);
     }
     private Notification latestNotification() {

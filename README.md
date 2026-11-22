@@ -50,11 +50,22 @@ allprojects {
 ```Gradle
 dependencies {
     // ... other dependencies
-     implementation 'com.github.josef130:JcPlayer:2.7.9'
+     implementation 'com.github.josef130:JcPlayer:2.8.0'
 }
 ```
 
 
+## Android system media integration (2.8.0 pre-release)
+
+Playback now uses a MediaSessionCompat, a standard MediaStyle notification and a mediaPlayback foreground service. Android chooses the panel appearance. Track title, duration, progress, play/pause, previous/next and seek are published to system controls. Lock-screen visibility depends on the device's notification/privacy settings.
+
+Audio focus is requested before playing. Another music application's permanent focus takeover pauses JcPlayer without automatic restart. A temporary interruption can resume when focus returns, unless the user paused or stopped. Disconnecting headphones also pauses playback.
+
+The service owns background playback. Do not call `kill()` from Activity `onDestroy()` if playback should continue when leaving the screen. Call it when the user explicitly ends playback. Existing notification methods and custom small-icon selection remain supported; custom RemoteViews layouts are replaced by system media controls.
+
+The library manifest supplies `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK`, `WAKE_LOCK`, the mediaPlayback service type and media-button receiver. Start playback from a visible user action; Android foreground-service restrictions still apply. Media-session notifications are exempt from the Android 13 ordinary notification-permission gate. The minimum SDK remains 14 (Android 4.0).
+
+This release retains MediaPlayer and AndroidX Media 1.6.0 rather than migrating the engine to Media3. It does not restore a playlist after process death or device reboot. The sample uses bundled audio for offline testing.
 ## Getting Started
 You only need  a JcPlayerView on your Layout Activity/Fragment. All the controls and everything else are created by the player view itself.
 ```xml
@@ -109,7 +120,7 @@ Pass a white notification silhouette on a transparent background as your custom 
 The artwork inside the notification layout remains independent of the small icon.
 No OneSignal or OpenPush icon is selected by the notification code.
 
-### Notification stability (2.7.9)
+### Notification stability (2.8.0)
 
 Notification work is serialized on the main looper, including calls from background
 playback threads. Progress callbacks are coalesced and unchanged displayed seconds
