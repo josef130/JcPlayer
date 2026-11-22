@@ -217,7 +217,7 @@ class JcNotificationPlayer private constructor(private val context: Context) :
             PendingIntent.getBroadcast(context.applicationContext, id, intent, buildIntentFlags())
         }
 
-    override fun onPreparedAudio(status: JcStatus) {}
+    override fun onPreparedAudio(status: JcStatus) = onPlaying(status)
     override fun onCompletedAudio() {}
 
     override fun onPaused(status: JcStatus) {
@@ -230,7 +230,7 @@ class JcNotificationPlayer private constructor(private val context: Context) :
     }
 
     override fun onStopped(status: JcStatus) = destroyNotificationIfExists()
-    override fun onContinueAudio(status: JcStatus) {}
+    override fun onContinueAudio(status: JcStatus) = onPlaying(status)
 
     override fun onPlaying(status: JcStatus) {
         val nextTitle = status.jcAudio?.title

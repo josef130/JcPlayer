@@ -50,7 +50,7 @@ allprojects {
 ```Gradle
 dependencies {
     // ... other dependencies
-     implementation 'com.github.josef130:JcPlayer:2.7.8'
+     implementation 'com.github.josef130:JcPlayer:2.7.9'
 }
 ```
 
@@ -109,7 +109,7 @@ Pass a white notification silhouette on a transparent background as your custom 
 The artwork inside the notification layout remains independent of the small icon.
 No OneSignal or OpenPush icon is selected by the notification code.
 
-### Notification stability (2.7.8)
+### Notification stability (2.7.9)
 
 Notification work is serialized on the main looper, including calls from background
 playback threads. Progress callbacks are coalesced and unchanged displayed seconds

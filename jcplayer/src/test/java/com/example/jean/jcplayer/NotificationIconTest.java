@@ -176,6 +176,26 @@ public class NotificationIconTest {
         assertIcon(R.drawable.ic_default_notification);
     }
 
+    @Test public void continuingPausedAudioRestoresPauseControlInPlayingLayout() {
+        notificationPlayer.createNotificationPlayer("Track", R.drawable.ic_default_notification);
+        notificationPlayer.onPaused(status);
+        assertEquals(R.layout.layout_paused_notification, latestNotification().contentView.getLayoutId());
+        notificationPlayer.onContinueAudio(status);
+        assertEquals(R.layout.layout_playing_notification, latestNotification().contentView.getLayoutId());
+        assertIcon(R.drawable.ic_default_notification);
+    }
+    @Test public void newlyPreparedTrackRestoresPlayingControlsAfterPauseAndStop() {
+        notificationPlayer.createNotificationPlayer("Track", R.drawable.ic_default_notification);
+        notificationPlayer.onPaused(status);
+        notificationPlayer.onPreparedAudio(status);
+        assertEquals(R.layout.layout_playing_notification, latestNotification().contentView.getLayoutId());
+        notificationPlayer.onStopped(status);
+        assertNull(latestNotification());
+        notificationPlayer.onPreparedAudio(status);
+        assertNotNull(latestNotification());
+        assertEquals(R.layout.layout_playing_notification, latestNotification().contentView.getLayoutId());
+        assertIcon(R.drawable.ic_default_notification);
+    }
     private Notification latestNotification() {
         NotificationManager manager = (NotificationManager) activity.getSystemService(Context.NOTIFICATION_SERVICE);
         return Shadows.shadowOf(manager).getNotification(100);

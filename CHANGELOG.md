@@ -1,3 +1,10 @@
+# 2.7.9 (pre-release)
+
+- Preserve the 2.7.8 notification memory and crash fixes.
+- Correct the playing/pause control layout when paused audio is continued.
+- Correct newly prepared track controls after pause or stop, even when no onPlaying callback is delivered.
+- Add resume and new-track regression tests. Use 2.7.9 instead of 2.7.8.
+
 # 2.7.8 (pre-release)
 
 - Remove full-resolution Bitmap decoding of small notification icons on each progress tick; the custom notification artwork remains resource-based.
