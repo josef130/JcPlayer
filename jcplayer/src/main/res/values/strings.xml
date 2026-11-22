@@ -10,4 +10,8 @@
     <string name="description_next_button">next button</string>
     <string name="description_repeat_button">repeat button</string>
     <string name="description_shuffle_button">shuffle button</string>
+    <string name="jc_media_play">Play</string>
+    <string name="jc_media_pause">Pause</string>
+    <string name="jc_media_previous">Previous</string>
+    <string name="jc_media_next">Next</string>
 </resources>

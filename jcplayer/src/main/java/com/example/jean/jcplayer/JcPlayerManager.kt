@@ -66,22 +66,22 @@ private constructor(private val serviceConnection: JcServiceConnection) : JcPlay
         private var INSTANCE: WeakReference<JcPlayerManager>? = null
 
         @JvmStatic
+        @Synchronized
         fun getInstance(
-                context: Context,
-                playlist: ArrayList<JcAudio>? = null,
-                listener: JcPlayerManagerListener? = null
-        ): WeakReference<JcPlayerManager> = INSTANCE ?: let {
-            INSTANCE = WeakReference(
-                    JcPlayerManager(JcServiceConnection(context)).also {
-                        it.context = context
-                        it.playlist = playlist ?: ArrayList()
-                        it.jcPlayerManagerListener = listener
-                    }
-            )
-            INSTANCE!!
+            context: Context,
+            playlist: ArrayList<JcAudio>? = null,
+            listener: JcPlayerManagerListener? = null
+        ): WeakReference<JcPlayerManager> {
+            INSTANCE?.let { if (it.get() != null) return it }
+            val appContext = context.applicationContext
+            val manager = JcPlayerManager(JcServiceConnection(appContext)).also {
+                it.context = appContext
+                it.playlist = playlist ?: ArrayList()
+                it.jcPlayerManagerListener = listener
+            }
+            return WeakReference(manager).also { INSTANCE = it }
         }
     }
-
     /**
      * Connects with audio service.
      */
@@ -91,12 +91,14 @@ private constructor(private val serviceConnection: JcServiceConnection) : JcPlay
                     onConnected = { binder ->
                         jcPlayerService = binder?.service.also { service ->
                             serviceBound = true
+                            service?.serviceListener = this
                             connectionListener?.invoke(service)
                         } ?: throw JcpServiceDisconnectedError
                     },
                     onDisconnected = {
                         serviceBound = false
-                        throw  JcpServiceDisconnectedError
+                        jcPlayerService = null
+                        notifyError(JcpServiceDisconnectedError)
                     }
             )
 
@@ -132,10 +134,9 @@ private constructor(private val serviceConnection: JcServiceConnection) : JcPlay
                 if (repeatCurrAudio) {
                     currentAudio?.let {
                         service.seekTo(0)
-                        service.onPrepared(service.getMediaPlayer()!!)
+                        service.play(it)
                     }
                 } else {
-                    service.stop()
                     getNextAudio()?.let { service.play(it) } ?: service.finalize()
                 }
             }
@@ -154,10 +155,9 @@ private constructor(private val serviceConnection: JcServiceConnection) : JcPlay
                 if (repeatCurrAudio) {
                     currentAudio?.let {
                         service.seekTo(0)
-                        service.onPrepared(service.getMediaPlayer()!!)
+                        service.play(it)
                     }
                 } else {
-                    service.stop()
                     getPreviousAudio().let { service.play(it) }
                 }
             }
@@ -167,6 +167,8 @@ private constructor(private val serviceConnection: JcServiceConnection) : JcPlay
     /**
      * Pauses the current audio.
      */
+    fun stopAudio() { jcPlayerService?.stop() }
+
     fun pauseAudio() {
         jcPlayerService?.let { service -> currentAudio?.let { service.pause(it) } }
     }
@@ -189,34 +191,25 @@ private constructor(private val serviceConnection: JcServiceConnection) : JcPlay
      * @param iconResource The icon resource path.
      */
     fun createNewNotification(iconResource: Int) {
-        jcNotificationPlayer
-                ?.createNotificationPlayer(currentAudio?.title, R.drawable.ic_stat_onesignal_default)
-                ?: let {
-                    jcNotificationPlayer = JcNotificationPlayer
-                            .getInstance(context)
-                            .get()
-                            .also { notification ->
-                                jcPlayerManagerListener = notification
-                            }
-
-                    createNewNotification(R.drawable.ic_stat_onesignal_default)
-                }
+        notificationPlayer()?.createNotificationPlayer(currentAudio?.title, iconResource)
     }
 
-    /**
-     * Updates the current notification
-     */
-    fun updateNotification() {
-        jcNotificationPlayer
-                ?.updateNotification()
-                ?: let {
-                    jcNotificationPlayer = JcNotificationPlayer
-                            .getInstance(context)
-                            .get()
-                            .also { jcPlayerManagerListener = it }
+    /** Creates a notification without resetting an icon selected by the host app. */
+    fun createNewNotification() {
+        notificationPlayer()?.createNotificationPlayer(currentAudio?.title)
+    }
 
-                    updateNotification()
-                }
+    /** Updates playback state while preserving the selected small icon. */
+    fun updateNotification() {
+        notificationPlayer()?.updateNotification()
+    }
+
+    private fun notificationPlayer(): JcNotificationPlayer? {
+        if (jcNotificationPlayer == null) {
+            jcNotificationPlayer = JcNotificationPlayer.getInstance(context).get()
+
+        }
+        return jcNotificationPlayer
     }
 
     /**
@@ -263,6 +256,7 @@ private constructor(private val serviceConnection: JcServiceConnection) : JcPlay
 
         for (listener in managerListeners) {
             listener.onPreparedAudio(status)
+            listener.onPlaying(status)
         }
     }
 
@@ -272,9 +266,6 @@ private constructor(private val serviceConnection: JcServiceConnection) : JcPlay
         for (listener in managerListeners) {
             listener.onTimeChanged(status)
 
-            if (status.currentPosition in 1..2 /* Not to call this every second */) {
-                listener.onPlaying(status)
-            }
         }
     }
 
@@ -283,6 +274,7 @@ private constructor(private val serviceConnection: JcServiceConnection) : JcPlay
 
         for (listener in managerListeners) {
             listener.onContinueAudio(status)
+            listener.onPlaying(status)
         }
     }
 

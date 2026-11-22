@@ -50,10 +50,24 @@ allprojects {
 ```Gradle
 dependencies {
     // ... other dependencies
-     implementation 'com.github.josef130:JcPlayer:{version}'
+     implementation 'com.github.josef130:JcPlayer:2.8.1'
 }
 ```
 
+
+## Android system media integration (2.8.1 pre-release)
+
+The media card uses a large white music-note placeholder, cached once at 256x256 pixels. A fixed total-duration subtitle replaces the repeated application name, while the system owns the seek/progress display. Dedicated 24dp vector actions improve Android 12 presentation; the final control size and panel colors depend on the OS/device.
+
+Playback now uses a MediaSessionCompat, a standard MediaStyle notification and a mediaPlayback foreground service. Android chooses the panel appearance. Track title, duration, progress, play/pause, previous/next and seek are published to system controls. Lock-screen visibility depends on the device's notification/privacy settings.
+
+Audio focus is requested before playing. Another music application's permanent focus takeover pauses JcPlayer without automatic restart. A temporary interruption can resume when focus returns, unless the user paused or stopped. Disconnecting headphones also pauses playback.
+
+The service owns background playback. Do not call `kill()` from Activity `onDestroy()` if playback should continue when leaving the screen. Call it when the user explicitly ends playback. Existing notification methods and custom small-icon selection remain supported; custom RemoteViews layouts are replaced by system media controls.
+
+The library manifest supplies `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK`, `WAKE_LOCK`, the mediaPlayback service type and media-button receiver. Start playback from a visible user action; Android foreground-service restrictions still apply. Media-session notifications are exempt from the Android 13 ordinary notification-permission gate. The minimum SDK remains 14 (Android 4.0).
+
+This release retains MediaPlayer and AndroidX Media 1.6.0 rather than migrating the engine to Media3. It does not restore a playlist after process death or device reboot. The sample uses bundled audio for offline testing.
 
 ## Getting Started
 You only need  a JcPlayerView on your Layout Activity/Fragment. All the controls and everything else are created by the player view itself.
@@ -99,6 +113,28 @@ OR
     jcplayerView.createNotification(R.drawable.myIcon); // Your icon resource
 ```
 
+### Notification icon behavior (2.7.7+)
+
+`createNotification()` uses `R.drawable.default_icon` unless a custom icon was already
+selected. `createNotification(R.drawable.myIcon)` selects the small status-bar icon
+and preserves it through play, pause, track/time updates and foreground/background
+notification recreation. A later call without an argument keeps the selected icon.
+Pass a white notification silhouette on a transparent background as your custom icon.
+The artwork inside the notification layout remains independent of the small icon.
+No OneSignal or OpenPush icon is selected by the notification code.
+
+### Notification stability (2.8.1)
+
+Notification work is serialized on the main looper, including calls from background
+playback threads. Progress callbacks are coalesced and unchanged displayed seconds
+are not reposted. Small notification icons are kept as resource references; they are
+not decoded into an additional full-resolution large bitmap on each update.
+
+If Android throws the reported ArraySet `ArrayIndexOutOfBoundsException` during
+`notify()`, the player retries once using a simple system notification layout with
+the same small icon. If that retry also fails, the update is skipped rather than
+crashing playback. The normal custom artwork and controls are unchanged when posting
+succeeds. Stopping the player cancels only its own notification.
 ### How can I get callbacks of player status?
 ```java
     MyActivity implements JcPlayerManagerListener {
