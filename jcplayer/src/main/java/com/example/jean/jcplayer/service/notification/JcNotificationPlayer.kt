@@ -134,11 +134,11 @@ class JcNotificationPlayer private constructor(context: Context) : JcPlayerManag
         if (!force && state == lastPublishedState) return
         createNotificationChannel()
         val builder = baseBuilder(state)
-            .addAction(R.drawable.ic_previous_white, context.getString(R.string.jc_media_previous), buildPendingIntent(PREVIOUS, 1))
-            .addAction(if (state.paused) R.drawable.ic_play_white else R.drawable.ic_pause_white,
+            .addAction(R.drawable.jc_media_previous, context.getString(R.string.jc_media_previous), buildPendingIntent(PREVIOUS, 1))
+            .addAction(if (state.paused) R.drawable.jc_media_play else R.drawable.jc_media_pause,
                 context.getString(if (state.paused) R.string.jc_media_play else R.string.jc_media_pause),
                 buildPendingIntent(if (state.paused) PLAY else PAUSE, if (state.paused) 2 else 3))
-            .addAction(R.drawable.ic_next_white, context.getString(R.string.jc_media_next), buildPendingIntent(NEXT, 0))
+            .addAction(R.drawable.jc_media_next, context.getString(R.string.jc_media_next), buildPendingIntent(NEXT, 0))
             .setStyle(MediaStyle().setMediaSession(sessionToken).setShowActionsInCompactView(0, 1, 2))
         if (notifySafely(builder.build(), state)) lastPublishedState = state
     }
@@ -146,7 +146,8 @@ class JcNotificationPlayer private constructor(context: Context) : JcPlayerManag
     private fun baseBuilder(state: DisplayState) = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL)
         .setSmallIcon(state.icon)
         .setContentTitle(state.title ?: applicationName)
-        .setContentText(applicationName)
+        .setContentText(JcMediaPresentation.durationText(state.duration))
+        .setLargeIcon(JcMediaPresentation.artwork(context))
         .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
         .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
         .setPriority(NotificationCompat.PRIORITY_LOW)

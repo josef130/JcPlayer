@@ -1,3 +1,11 @@
+# 2.8.1 (pre-release)
+
+- Supply a large white music-note placeholder as system media artwork, including the lock screen. Reuse one fixed 256x256 bitmap for notification and session metadata; never decode full-size application artwork on progress updates.
+- Use dedicated 24dp vector transport icons with standard glyph padding for Android 12 MediaStyle actions. System button containers and Android 13+ controls remain OS-managed.
+- Replace the repeated application name in notification text and media subtitle with the track's fixed total duration. Android's native seek/progress remains available.
+- Preserve custom status-bar icons, audio focus handling and foreground playback behavior from 2.8.0.
+- Extend regression coverage to Android 12 and Android 14 media metadata, artwork reuse, track changes and duration display.
+
 # 2.8.0 (pre-release)
 
 - Replace custom RemoteViews notifications with AndroidX MediaStyle and an active MediaSessionCompat, so Android controls the media panel appearance.

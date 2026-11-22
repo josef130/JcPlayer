@@ -93,10 +93,17 @@ public class NotificationIconTest {
         notificationPlayer.onPlaying(status);
         assertIcon(R.drawable.ic_default_notification);
     }
-    @Test public void notificationNeverAllocatesADuplicateLargeIcon() {
+    @Test public void notificationReusesOneBoundedArtworkBitmap() {
         notificationPlayer.createNotificationPlayer("Track", R.drawable.ic_default_notification);
         Notification posted = latestNotification();
-        assertNull(posted.getLargeIcon());
+        assertNotNull(posted.getLargeIcon());
+        android.graphics.Bitmap artwork = Shadows.shadowOf(posted.getLargeIcon()).getBitmap();
+        assertTrue(artwork.getWidth() > 0 && artwork.getWidth() <= 256);
+        assertTrue(artwork.getHeight() > 0 && artwork.getHeight() <= 256);
+        notificationPlayer.onTimeChanged(status);
+        Shadows.shadowOf(Looper.getMainLooper()).idle();
+        assertEquals(256, com.example.jean.jcplayer.service.notification.JcMediaPresentation.INSTANCE.artwork(activity).getWidth());
+        assertNotNull(latestNotification().getLargeIcon());
         assertNull(posted.contentView);
         assertEquals("android.app.Notification$MediaStyle", posted.extras.getString("android.template"));
     }
@@ -181,21 +188,21 @@ public class NotificationIconTest {
     @Test public void continuingPausedAudioRestoresPauseControlInPlayingLayout() {
         notificationPlayer.createNotificationPlayer("Track", R.drawable.ic_default_notification);
         notificationPlayer.onPaused(status);
-        assertEquals(R.drawable.ic_play_white, latestNotification().actions[1].icon);
+        assertEquals(R.drawable.jc_media_play, latestNotification().actions[1].icon);
         notificationPlayer.onContinueAudio(status);
-        assertEquals(R.drawable.ic_pause_white, latestNotification().actions[1].icon);
+        assertEquals(R.drawable.jc_media_pause, latestNotification().actions[1].icon);
         assertIcon(R.drawable.ic_default_notification);
     }
     @Test public void newlyPreparedTrackRestoresPlayingControlsAfterPauseAndStop() {
         notificationPlayer.createNotificationPlayer("Track", R.drawable.ic_default_notification);
         notificationPlayer.onPaused(status);
         notificationPlayer.onPreparedAudio(status);
-        assertEquals(R.drawable.ic_pause_white, latestNotification().actions[1].icon);
+        assertEquals(R.drawable.jc_media_pause, latestNotification().actions[1].icon);
         notificationPlayer.onStopped(status);
         assertNull(latestNotification());
         notificationPlayer.onPreparedAudio(status);
         assertNotNull(latestNotification());
-        assertEquals(R.drawable.ic_pause_white, latestNotification().actions[1].icon);
+        assertEquals(R.drawable.jc_media_pause, latestNotification().actions[1].icon);
         assertIcon(R.drawable.ic_default_notification);
     }
     private Notification latestNotification() {

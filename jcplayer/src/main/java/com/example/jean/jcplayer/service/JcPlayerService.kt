@@ -32,6 +32,7 @@ import com.example.jean.jcplayer.general.JcStatus
 import com.example.jean.jcplayer.general.Origin
 import com.example.jean.jcplayer.model.JcAudio
 import com.example.jean.jcplayer.service.notification.JcNotificationPlayer
+import com.example.jean.jcplayer.service.notification.JcMediaPresentation
 import java.io.File
 
 /** Owns playback, the Android media session, audio focus and the foreground lifetime. */
@@ -388,7 +389,9 @@ class JcPlayerService : Service(), MediaPlayer.OnPreparedListener, MediaPlayer.O
                 .putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, audio?.path)
                 .putString(MediaMetadataCompat.METADATA_KEY_TITLE, audio?.title ?: label)
                 .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, audio?.title ?: label)
-                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, label)
+                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, JcMediaPresentation.durationText(length))
+                .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, JcMediaPresentation.durationText(length))
+                .putBitmap(MediaMetadataCompat.METADATA_KEY_ART, JcMediaPresentation.artwork(this))
                 .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, length).build())
             metadataKey = key
         }

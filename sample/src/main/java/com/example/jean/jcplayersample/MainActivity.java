@@ -51,8 +51,8 @@ public class MainActivity extends AppCompatActivity
         player = findViewById(R.id.jcplayer);
 
         ArrayList<JcAudio> jcAudios = new ArrayList<>();
-        jcAudios.add(JcAudio.createFromRaw("JcPlayer 2.8.0 - Local music", R.raw.a_34));
-        jcAudios.add(JcAudio.createFromRaw("JcPlayer 2.8.0 - Local MIDI", R.raw.a_203));
+        jcAudios.add(JcAudio.createFromRaw("JcPlayer 2.8.1 - Local music", R.raw.a_34));
+        jcAudios.add(JcAudio.createFromRaw("JcPlayer 2.8.1 - Local MIDI", R.raw.a_203));
         player.initPlaylist(jcAudios, this);
         adapterSetup();
     }

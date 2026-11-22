@@ -30,7 +30,7 @@ import org.robolectric.shadows.util.DataSource;
 import static org.junit.Assert.*;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 31)
+@Config(sdk = {31, 34}, shadows = MediaIntegrationTest.RecordingMediaSession.class)
 public class MediaIntegrationTest {
     private static final String FIRST = "https://example.com/jc-first.mp3";
     private static final String SECOND = "https://example.com/jc-second.mp3";
@@ -88,7 +88,7 @@ public class MediaIntegrationTest {
         assertEquals(service.getMediaSessionToken().getToken(), posted.extras.getParcelable("android.mediaSession"));
         assertEquals("First song", posted.extras.getCharSequence(Notification.EXTRA_TITLE));
         assertEquals(Notification.VISIBILITY_PUBLIC, posted.visibility);
-        assertNull(posted.getLargeIcon());
+        assertNotNull(posted.getLargeIcon());
         assertNull(posted.contentView);
     }
 
@@ -188,6 +188,50 @@ public class MediaIntegrationTest {
         assertNotNull(Shadows.shadowOf(audioManager).getLastAbandonedAudioFocusRequest());
     }
 
+    @Test public void durationReplacesDuplicateApplicationNameAndChangesWithTrackNotPosition() {
+        start();
+        android.support.v4.media.MediaMetadataCompat metadata = publishedMetadata();
+        assertEquals("02:00", metadata.getString(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ARTIST));
+        assertEquals("02:00", metadata.getDescription().getSubtitle());
+        assertEquals("02:00", notification().extras.getCharSequence(Notification.EXTRA_TEXT));
+        callbacks.onSeekTo(30000); idle(20);
+        callbacks.onPause();
+        assertEquals("02:00", notification().extras.getCharSequence(Notification.EXTRA_TEXT));
+        service.play(second); idle(20);
+        assertEquals("Second song", notification().extras.getCharSequence(Notification.EXTRA_TITLE));
+        assertEquals("01:30", notification().extras.getCharSequence(Notification.EXTRA_TEXT));
+        assertEquals("01:30", publishedMetadata().getDescription().getSubtitle());
+    }
+
+    @Test public void artworkIsSharedBySessionAndNotificationAndSurvivesTrackChanges() {
+        start();
+        android.graphics.Bitmap artwork = publishedMetadata()
+                .getBitmap(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ART);
+        assertNotNull(artwork);
+        assertEquals(256, artwork.getWidth());
+        assertEquals(256, artwork.getHeight());
+        assertTrue(Shadows.shadowOf(notification().getLargeIcon()).getBitmap().getWidth() <= 256);
+        service.play(second); idle(20);
+        assertEquals(artwork.getWidth(), publishedMetadata()
+                .getBitmap(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ART).getWidth());
+        assertTrue(Shadows.shadowOf(notification().getLargeIcon()).getBitmap().getWidth() <= 256);
+        assertEquals(R.drawable.jc_media_previous, notification().actions[0].icon);
+        assertEquals(R.drawable.jc_media_pause, notification().actions[1].icon);
+        assertEquals(R.drawable.jc_media_next, notification().actions[2].icon);
+    }
+    // Robolectric does not forward session metadata through its controller Binder.
+    // Capture the actual framework publication instead of replacing production code.
+    private android.support.v4.media.MediaMetadataCompat publishedMetadata() {
+        RecordingMediaSession shadow = org.robolectric.shadow.api.Shadow.extract(session.getMediaSession());
+        return android.support.v4.media.MediaMetadataCompat.fromMediaMetadata(shadow.metadata);
+    }
+
+    @org.robolectric.annotation.Implements(android.media.session.MediaSession.class)
+    public static class RecordingMediaSession extends org.robolectric.shadows.ShadowMediaSession {
+        android.media.MediaMetadata metadata;
+        @org.robolectric.annotation.Implementation
+        protected void setMetadata(android.media.MediaMetadata value) { metadata = value; }
+    }
     private static void resetSingleton(Class<?> type) throws Exception {
         Field field = type.getDeclaredField("INSTANCE"); field.setAccessible(true); field.set(null, null);
     }
