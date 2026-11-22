@@ -189,34 +189,25 @@ private constructor(private val serviceConnection: JcServiceConnection) : JcPlay
      * @param iconResource The icon resource path.
      */
     fun createNewNotification(iconResource: Int) {
-        jcNotificationPlayer
-                ?.createNotificationPlayer(currentAudio?.title, R.drawable.ic_stat_onesignal_default)
-                ?: let {
-                    jcNotificationPlayer = JcNotificationPlayer
-                            .getInstance(context)
-                            .get()
-                            .also { notification ->
-                                jcPlayerManagerListener = notification
-                            }
-
-                    createNewNotification(R.drawable.ic_stat_onesignal_default)
-                }
+        notificationPlayer()?.createNotificationPlayer(currentAudio?.title, iconResource)
     }
 
-    /**
-     * Updates the current notification
-     */
-    fun updateNotification() {
-        jcNotificationPlayer
-                ?.updateNotification()
-                ?: let {
-                    jcNotificationPlayer = JcNotificationPlayer
-                            .getInstance(context)
-                            .get()
-                            .also { jcPlayerManagerListener = it }
+    /** Creates a notification without resetting an icon selected by the host app. */
+    fun createNewNotification() {
+        notificationPlayer()?.createNotificationPlayer(currentAudio?.title)
+    }
 
-                    updateNotification()
-                }
+    /** Updates playback state while preserving the selected small icon. */
+    fun updateNotification() {
+        notificationPlayer()?.updateNotification()
+    }
+
+    private fun notificationPlayer(): JcNotificationPlayer? {
+        if (jcNotificationPlayer == null) {
+            jcNotificationPlayer = JcNotificationPlayer.getInstance(context).get()
+                .also { jcPlayerManagerListener = it }
+        }
+        return jcNotificationPlayer
     }
 
     /**

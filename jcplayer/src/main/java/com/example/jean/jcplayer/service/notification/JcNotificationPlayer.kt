@@ -63,7 +63,10 @@ class JcNotificationPlayer private constructor(private val context: Context) :
         }
     }
 
-    fun createNotificationPlayer(title: String?, iconResourceResource: Int) {
+    @JvmOverloads
+    fun createNotificationPlayer(title: String?, iconResourceResource: Int = iconResource) {
+        this.title = title
+        this.iconResource = iconResourceResource
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
             != PackageManager.PERMISSION_GRANTED
         ) {
@@ -76,8 +79,6 @@ class JcNotificationPlayer private constructor(private val context: Context) :
             return // Exit if permission isn't granted
         }
 
-        this.title = title
-        this.iconResource = iconResourceResource
         val openUi = Intent(context, context.javaClass)
         openUi.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
 
@@ -127,7 +128,7 @@ class JcNotificationPlayer private constructor(private val context: Context) :
     }
 
     fun updateNotification() {
-        createNotificationPlayer(title, R.drawable.ic_default_notification)
+        createNotificationPlayer(title)
     }
 
     private fun createNotificationPlayerView(): RemoteViews {
@@ -187,7 +188,7 @@ class JcNotificationPlayer private constructor(private val context: Context) :
     override fun onCompletedAudio() {}
 
     override fun onPaused(status: JcStatus) {
-        createNotificationPlayer(title, R.drawable.ic_default_notification)
+        createNotificationPlayer(title)
     }
 
     override fun onStopped(status: JcStatus) {
@@ -197,13 +198,13 @@ class JcNotificationPlayer private constructor(private val context: Context) :
     override fun onContinueAudio(status: JcStatus) {}
 
     override fun onPlaying(status: JcStatus) {
-        createNotificationPlayer(title, R.drawable.ic_default_notification)
+        createNotificationPlayer(title)
     }
 
     override fun onTimeChanged(status: JcStatus) {
         this.time = PlayerUtil.toTimeSongString(status.currentPosition.toInt())
         this.title = status.jcAudio.title
-        createNotificationPlayer(title, R.drawable.ic_default_notification)
+        createNotificationPlayer(title)
     }
 
     fun destroyNotificationIfExists() {

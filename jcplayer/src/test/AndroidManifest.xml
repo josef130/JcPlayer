@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- Notification tests run on SDK 33; this override applies only to test APKs. -->
+    <uses-sdk tools:overrideLibrary="androidx.test.espresso.idling.resource,androidx.test.monitor" />
+</manifest>

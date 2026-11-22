@@ -525,14 +525,14 @@ class JcPlayerView : LinearLayout, View.OnClickListener, SeekBar.OnSeekBarChange
      * @param iconResource icon path.
      */
     fun createNotification(@DrawableRes iconResource: Int) {
-        jcPlayerManager.createNewNotification(R.drawable.ic_stat_onesignal_default)
+        jcPlayerManager.createNewNotification(iconResource)
     }
 
     /**
-     * Create a notification player with same playlist with a default icon
+     * Create a notification using the selected icon, or default_icon if none was selected.
      */
     fun createNotification() {
-        jcPlayerManager.createNewNotification(R.drawable.ic_default_notification)
+        jcPlayerManager.createNewNotification()
     }
 
     override fun onPreparedAudio(status: JcStatus) {
