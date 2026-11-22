@@ -50,7 +50,7 @@ allprojects {
 ```Gradle
 dependencies {
     // ... other dependencies
-     implementation 'com.github.josef130:JcPlayer:{version}'
+     implementation 'com.github.josef130:JcPlayer:2.7.7'
 }
 ```
 
@@ -98,6 +98,16 @@ OR
 ```java
     jcplayerView.createNotification(R.drawable.myIcon); // Your icon resource
 ```
+
+### Notification icon behavior (2.7.7)
+
+`createNotification()` uses `R.drawable.default_icon` unless a custom icon was already
+selected. `createNotification(R.drawable.myIcon)` selects the small status-bar icon
+and preserves it through play, pause, track/time updates and foreground/background
+notification recreation. A later call without an argument keeps the selected icon.
+Pass a white notification silhouette on a transparent background as your custom icon.
+The artwork inside the notification layout remains independent of the small icon.
+No OneSignal or OpenPush icon is selected by the notification code.
 
 ### How can I get callbacks of player status?
 ```java
