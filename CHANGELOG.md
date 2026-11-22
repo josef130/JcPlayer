@@ -1,9 +1,14 @@
+# 2.7.8 (pre-release)
+
+- Remove full-resolution Bitmap decoding of small notification icons on each progress tick; the custom notification artwork remains resource-based.
+- Serialize notification state, channel creation, posting and cancellation on the main looper.
+- Coalesce queued progress callbacks and skip unchanged displayed seconds.
+- Preserve the 2.7.7 default/custom small-icon behavior, including calls from background threads.
+- Handle the reported framework ArraySet ArrayIndexOutOfBoundsException at the notify boundary with one simple-layout retry; if the framework still fails, skip that update instead of crashing playback.
+- Cache action PendingIntents and create the notification channel only once per player instance.
+- Drop late progress after stop and cancel only the player's notification, preserving unrelated push notifications.
+- Request notification permission only on Android 13+ and from a valid Activity, once while a request is pending.
+
 # 2.7.7
 
-- Honor the custom notification icon passed to JcPlayerView and JcPlayerManager.
-- Use default_icon for the default small status-bar icon.
-- Preserve the selected icon across playback callbacks, time updates, notification
-  refreshes, and repeated no-argument createNotification calls.
-- Remove forced ic_stat_onesignal_default references from notification creation.
-- Keep notification artwork unchanged and retain the existing custom-icon API.
-- Add notification regression tests covering default/custom icons and background return.
+- Honor and preserve the selected notification small icon across playback and foreground/background transitions.

@@ -50,7 +50,7 @@ allprojects {
 ```Gradle
 dependencies {
     // ... other dependencies
-     implementation 'com.github.josef130:JcPlayer:2.7.7'
+     implementation 'com.github.josef130:JcPlayer:2.7.8'
 }
 ```
 
@@ -99,7 +99,7 @@ OR
     jcplayerView.createNotification(R.drawable.myIcon); // Your icon resource
 ```
 
-### Notification icon behavior (2.7.7)
+### Notification icon behavior (2.7.7+)
 
 `createNotification()` uses `R.drawable.default_icon` unless a custom icon was already
 selected. `createNotification(R.drawable.myIcon)` selects the small status-bar icon
@@ -109,6 +109,18 @@ Pass a white notification silhouette on a transparent background as your custom 
 The artwork inside the notification layout remains independent of the small icon.
 No OneSignal or OpenPush icon is selected by the notification code.
 
+### Notification stability (2.7.8)
+
+Notification work is serialized on the main looper, including calls from background
+playback threads. Progress callbacks are coalesced and unchanged displayed seconds
+are not reposted. Small notification icons are kept as resource references; they are
+not decoded into an additional full-resolution large bitmap on each update.
+
+If Android throws the reported ArraySet `ArrayIndexOutOfBoundsException` during
+`notify()`, the player retries once using a simple system notification layout with
+the same small icon. If that retry also fails, the update is skipped rather than
+crashing playback. The normal custom artwork and controls are unchanged when posting
+succeeds. Stopping the player cancels only its own notification.
 ### How can I get callbacks of player status?
 ```java
     MyActivity implements JcPlayerManagerListener {
