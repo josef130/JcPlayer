@@ -5,6 +5,7 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.graphics.Bitmap
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -30,6 +31,7 @@ class JcNotificationPlayer private constructor(context: Context) : JcPlayerManag
     private var title: String? = null
     private var time = "00:00"
     private var duration = 0L
+    private var mediaArtwork: Bitmap? = null
     private var iconResource = R.drawable.default_icon
     private var paused = true
     private var stopped = false
@@ -49,7 +51,7 @@ class JcNotificationPlayer private constructor(context: Context) : JcPlayerManag
     private val applicationName by lazy {
         this.context.applicationInfo.loadLabel(this.context.packageManager).toString()
     }
-    private data class DisplayState(val title: String?, val time: String, val duration: Long, val icon: Int, val paused: Boolean)
+    private data class DisplayState(val title: String?, val time: String, val duration: Long, val icon: Int, val paused: Boolean, val artwork: Bitmap)
     private data class Progress(val title: String, val time: String, val duration: Long)
     private val progressLock = Any()
     private var pendingProgress: Progress? = null
@@ -99,8 +101,9 @@ class JcNotificationPlayer private constructor(context: Context) : JcPlayerManag
         }
     }
 
-    internal fun updateMediaState(title: String?, duration: Long, position: Long, playing: Boolean, force: Boolean = false) {
+    internal fun updateMediaState(title: String?, duration: Long, position: Long, playing: Boolean, force: Boolean = false, artwork: Bitmap? = null) {
         onMainThread {
+            this.mediaArtwork = artwork
             this.title = title
             this.duration = duration
             this.time = PlayerUtil.toTimeSongString(position.coerceAtLeast(0).toInt())
@@ -130,7 +133,7 @@ class JcNotificationPlayer private constructor(context: Context) : JcPlayerManag
         // POST_NOTIFICATIONS gate. Do not request Activity permissions from a Service.
         if (sessionToken == null && Build.VERSION.SDK_INT >= 33 &&
             ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return
-        val state = DisplayState(title, time, duration, iconResource, paused)
+        val state = DisplayState(title, time, duration, iconResource, paused, mediaArtwork ?: JcMediaPresentation.artwork(context))
         if (!force && state == lastPublishedState) return
         createNotificationChannel()
         val builder = baseBuilder(state)
@@ -147,7 +150,7 @@ class JcNotificationPlayer private constructor(context: Context) : JcPlayerManag
         .setSmallIcon(state.icon)
         .setContentTitle(state.title ?: applicationName)
         .setContentText(JcMediaPresentation.durationText(state.duration))
-        .setLargeIcon(JcMediaPresentation.artwork(context))
+        .setLargeIcon(state.artwork)
         .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
         .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
         .setPriority(NotificationCompat.PRIORITY_LOW)

@@ -57,7 +57,7 @@ class JcPlayerService : Service(), MediaPlayer.OnPreparedListener, MediaPlayer.O
     private lateinit var audioManager: AudioManager
     private lateinit var mediaSession: MediaSessionCompat
     private lateinit var notificationPlayer: JcNotificationPlayer
-    private var metadataKey: Triple<String?, String?, Long>? = null
+    private var metadataKey: Pair<Any?, Triple<String?, String?, Long>>? = null
 
     @Volatile var isPlaying = false
         private set
@@ -401,7 +401,7 @@ class JcPlayerService : Service(), MediaPlayer.OnPreparedListener, MediaPlayer.O
     private fun updateSession() {
         val audio = currentAudio
         val length = duration()
-        val key = Triple(audio?.path, audio?.title, length)
+        val key = Pair<Any?, Triple<String?, String?, Long>>(audio?.origin, Triple(audio?.path, audio?.title, length))
         if (metadataKey != key) {
             val label = applicationInfo.loadLabel(packageManager).toString()
             mediaSession.setMetadata(MediaMetadataCompat.Builder()
@@ -410,7 +410,7 @@ class JcPlayerService : Service(), MediaPlayer.OnPreparedListener, MediaPlayer.O
                 .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, audio?.title ?: label)
                 .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, JcMediaPresentation.durationText(length))
                 .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, JcMediaPresentation.durationText(length))
-                .putBitmap(MediaMetadataCompat.METADATA_KEY_ART, JcMediaPresentation.artwork(this))
+                .putBitmap(MediaMetadataCompat.METADATA_KEY_ART, JcMediaPresentation.artwork(this, audio))
                 .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, length).build())
             metadataKey = key
         }
@@ -429,9 +429,19 @@ class JcPlayerService : Service(), MediaPlayer.OnPreparedListener, MediaPlayer.O
         mediaSession.isActive = audio != null
     }
 
+    internal fun refreshArtwork() {
+        val refresh = {
+            if (!destroyed && currentAudio != null) {
+                metadataKey = null
+                publishState(force = true)
+            }
+        }
+        if (Looper.myLooper() == Looper.getMainLooper()) refresh() else handler.post { refresh() }
+    }
+
     private fun publishState(force: Boolean = false) {
         updateSession()
-        if (currentAudio != null) notificationPlayer.updateMediaState(currentAudio?.title, duration(), position(), isPlaying, force)
+        if (currentAudio != null) notificationPlayer.updateMediaState(currentAudio?.title, duration(), position(), isPlaying, force, JcMediaPresentation.artwork(this, currentAudio))
     }
 
     private val progressTick = object : Runnable {

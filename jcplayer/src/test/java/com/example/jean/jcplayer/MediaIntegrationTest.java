@@ -45,6 +45,7 @@ public class MediaIntegrationTest {
     private MediaSessionCompat.Callback callbacks;
 
     @Before public void setUp() throws Exception {
+        JcPlayerManager.setArtworkProvider(null);
         resetSingleton(JcPlayerManager.class);
         resetSingleton(JcNotificationPlayer.class);
         activityController = Robolectric.buildActivity(Activity.class).setup();
@@ -70,6 +71,7 @@ public class MediaIntegrationTest {
 
     @After public void tearDown() {
         if (!activity.isDestroyed()) activityController.pause().stop().destroy();
+        JcPlayerManager.setArtworkProvider(null);
         serviceController.destroy();
         Shadows.shadowOf(Looper.getMainLooper()).idle();
     }
@@ -209,7 +211,61 @@ public class MediaIntegrationTest {
         assertEquals("01:30", publishedMetadata().getDescription().getSubtitle());
     }
 
-    @Test public void artworkIsSharedBySessionAndNotificationAndSurvivesTrackChanges() {
+    @Test public void optionalArtworkChangesWithTrackWithoutWorkOnProgressTicks() throws Exception {
+        java.util.concurrent.atomic.AtomicInteger calls = new java.util.concurrent.atomic.AtomicInteger();
+        android.graphics.Bitmap firstCover = android.graphics.Bitmap.createBitmap(64,64,android.graphics.Bitmap.Config.ARGB_8888);
+        firstCover.eraseColor(android.graphics.Color.RED);
+        android.graphics.Bitmap secondCover = android.graphics.Bitmap.createBitmap(96,96,android.graphics.Bitmap.Config.ARGB_8888);
+        secondCover.eraseColor(android.graphics.Color.BLUE);
+        JcPlayerManager.setArtworkProvider((context,audio) -> {
+            assertSame(activity.getApplicationContext(),context);
+            calls.incrementAndGet();
+            return FIRST.equals(audio.getPath()) ? firstCover : secondCover;
+        });
+        start();
+        assertEquals(64, publishedMetadata().getBitmap(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ART).getWidth());
+        assertSame(firstCover,com.example.jean.jcplayer.service.notification.JcMediaPresentation.INSTANCE.artwork(activity,first));
+        idle(3200);
+        assertEquals(1,calls.get());
+        service.play(second); idle(20);
+        assertEquals(2,calls.get());
+        assertEquals(96,publishedMetadata().getBitmap(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ART).getWidth());
+        assertSame(secondCover,com.example.jean.jcplayer.service.notification.JcMediaPresentation.INSTANCE.artwork(activity,second));
+        assertTrue(((android.graphics.drawable.BitmapDrawable)notification().getLargeIcon().loadDrawable(activity)).getBitmap().getWidth() <= 96);
+        assertTrue(service.isPlaying());
+    }
+    @Test public void artworkProviderRejectsRecycledAndBoundsOversizeAndHandlesFailure() {
+        android.graphics.Bitmap huge=android.graphics.Bitmap.createBitmap(800,400,android.graphics.Bitmap.Config.ARGB_8888);
+        JcPlayerManager.setArtworkProvider((context,audio)->huge);
+        start();
+        android.graphics.Bitmap art=publishedMetadata().getBitmap(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ART);
+        assertEquals(256,art.getWidth()); assertEquals(128,art.getHeight());
+        assertFalse(huge.isRecycled());
+        android.graphics.Bitmap recycled=android.graphics.Bitmap.createBitmap(4,4,android.graphics.Bitmap.Config.ARGB_8888);
+        recycled.recycle();
+        JcPlayerManager.setArtworkProvider((context,audio)->recycled);
+        service.play(second); idle(20);
+        assertEquals(256,publishedMetadata().getBitmap(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ART).getHeight());
+        JcPlayerManager.setArtworkProvider((context,audio)->{throw new IllegalStateException("Unavailable cover");});
+        service.play(first); idle(20);
+        assertTrue(service.isPlaying());
+        assertEquals(256,publishedMetadata().getBitmap(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ART).getWidth());
+    }
+    @Test public void changingProviderRefreshesActiveSessionWithoutRestartingSong() throws Exception {
+        JcPlayerManager manager=JcPlayerManager.getInstance(activity,null,null).get();
+        idle(1);
+        start();
+        Field field=JcPlayerService.class.getDeclaredField("mediaPlayer"); field.setAccessible(true);
+        Object player=field.get(service);
+        android.graphics.Bitmap cover=android.graphics.Bitmap.createBitmap(64,64,android.graphics.Bitmap.Config.ARGB_8888);
+        JcPlayerManager.setArtworkProvider((context,audio)->cover);
+        idle(1);
+        assertSame(player,field.get(service));
+        assertTrue(service.isPlaying());
+        assertSame(first,service.getCurrentAudio());
+        assertEquals(64,publishedMetadata().getBitmap(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ART).getWidth());
+        assertSame(cover,com.example.jean.jcplayer.service.notification.JcMediaPresentation.INSTANCE.artwork(activity,first));
+    }    @Test public void artworkIsSharedBySessionAndNotificationAndSurvivesTrackChanges() {
         start();
         android.graphics.Bitmap artwork = publishedMetadata()
                 .getBitmap(android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ART);

@@ -1,3 +1,9 @@
+# 2.8.3 (pre-release)
+
+- Add optional per-track JcArtworkProvider for shared MediaSession/notification artwork, configured without starting a player.
+- Cache artwork per track, cap custom bitmap dimensions at 256 pixels, and fall back to the existing default when a provider returns null/recycled data or throws an exception.
+- Refresh an active session without replacing MediaPlayer, resetting playback or changing its small status icon.
+- Keep default artwork and the background autoplay/audio-focus fixes from 2.8.2 unchanged for existing integrations.
 # 2.8.2 (pre-release)
 
 - Keep the foreground media service and audio focus active while a completed track is replaced or replayed. Avoid a background foreground-service restart at each track boundary.

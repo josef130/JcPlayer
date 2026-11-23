@@ -50,7 +50,7 @@ allprojects {
 ```Gradle
 dependencies {
     // ... other dependencies
-     implementation 'com.github.josef130:JcPlayer:2.8.2'
+     implementation 'com.github.josef130:JcPlayer:2.8.3'
 }
 ```
 
@@ -178,3 +178,13 @@ You can customize the player layout by manipulating these attributes.
 * [ ] Add Instrumentation tests
 * [ ] Add unit tests.
 
+
+## Optional per-track media artwork (2.8.3 pre-release)
+
+Configure once in Application.onCreate, before playback:
+
+```java
+JcPlayerManager.setArtworkProvider((applicationContext, audio) -> cachedSmallBitmapFor(audio));
+```
+
+The provider is called on the main thread on track changes, not progress ticks. Return an already available small bitmap, or null to use the existing default artwork. Do not capture an Activity or do network/disk work in this callback. Images larger than 256 pixels are scaled to a maximum side of 256. Do not recycle returned bitmaps while the player uses them. MediaSession metadata and the notification use the same cover. Changing the provider refreshes an active session without restarting playback; passing null restores the default. Calling the setter before playback does not create or bind a service. The existing small notification icon is independent of artwork and is unchanged.

@@ -69,6 +69,13 @@ private constructor(private val serviceConnection: JcServiceConnection) : JcPlay
     }
 
     companion object {
+        /** Configure before playback, e.g. Application.onCreate; null restores the default.
+         * Does not create/bind a player. An existing session refreshes without restarting audio.
+         */
+        @JvmStatic fun setArtworkProvider(provider: JcArtworkProvider?) {
+            com.example.jean.jcplayer.service.notification.JcMediaPresentation.setProvider(provider)
+            INSTANCE?.get()?.jcPlayerService?.refreshArtwork()
+        }
 
         @Volatile
         private var INSTANCE: WeakReference<JcPlayerManager>? = null
