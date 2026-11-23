@@ -50,12 +50,12 @@ allprojects {
 ```Gradle
 dependencies {
     // ... other dependencies
-     implementation 'com.github.josef130:JcPlayer:2.8.1'
+     implementation 'com.github.josef130:JcPlayer:2.8.2'
 }
 ```
 
 
-## Android system media integration (2.8.1 pre-release)
+## Android system media integration (2.8.2 pre-release)
 
 The media card uses a large white music-note placeholder, cached once at 256x256 pixels. A fixed total-duration subtitle replaces the repeated application name, while the system owns the seek/progress display. Dedicated 24dp vector actions improve Android 12 presentation; the final control size and panel colors depend on the OS/device.
 
@@ -69,6 +69,13 @@ The library manifest supplies `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PL
 
 This release retains MediaPlayer and AndroidX Media 1.6.0 rather than migrating the engine to Media3. It does not restore a playlist after process death or device reboot. The sample uses bundled audio for offline testing.
 
+## Background queue continuity (2.8.2 pre-release)
+
+Automatic advancement is owned by JcPlayerManager rather than JcPlayerView. The queue continues when the Activity is stopped/destroyed and no player view remains attached. The media foreground service and audio focus remain active across track boundaries, including repeat-one seeking; ending a non-repeating queue releases playback resources normally.
+
+`JcPlayerManager.autoAdvance` defaults to true. Hosts that intentionally manage completion themselves can set it to false. A completion callback that already stops, replaces or replays the track will not be advanced again by the default queue logic.
+
+Detached JcPlayerViews unregister their UI callbacks and reattach without starting audio. Hosts should also call `manager.removeListener(activityListener)` when an Activity is destroyed. This removes UI callbacks without stopping the service or clearing the playlist.
 ## Getting Started
 You only need  a JcPlayerView on your Layout Activity/Fragment. All the controls and everything else are created by the player view itself.
 ```xml
@@ -123,7 +130,7 @@ Pass a white notification silhouette on a transparent background as your custom 
 The artwork inside the notification layout remains independent of the small icon.
 No OneSignal or OpenPush icon is selected by the notification code.
 
-### Notification stability (2.8.1)
+### Notification stability (2.8.2)
 
 Notification work is serialized on the main looper, including calls from background
 playback threads. Progress callbacks are coalesced and unchanged displayed seconds

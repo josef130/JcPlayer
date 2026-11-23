@@ -39,6 +39,7 @@ class JcPlayerView : LinearLayout, View.OnClickListener, SeekBar.OnSeekBarChange
         JcPlayerManager.getInstance(context).get()!!
     }
 
+    private var playlistInitialized = false
     private var _binding: ViewJcplayerBinding? = null
     private val binding get() = _binding!!
 
@@ -287,6 +288,7 @@ class JcPlayerView : LinearLayout, View.OnClickListener, SeekBar.OnSeekBarChange
             sortPlaylist(playlist)
         }
 
+        playlistInitialized = true
         jcPlayerManager.playlist = playlist as ArrayList<JcAudio>
         jcPlayerManager.jcPlayerManagerListener = jcPlayerManagerListener
         jcPlayerManager.jcPlayerManagerListener = this
@@ -569,12 +571,20 @@ class JcPlayerView : LinearLayout, View.OnClickListener, SeekBar.OnSeekBarChange
 
     override fun onCompletedAudio() {
         resetPlayerInfo()
+        // Queue advancement is owned by JcPlayerManager, not Activity/View lifetime.
+    }
 
-        try {
-            jcPlayerManager.nextAudio()
-        } catch (e: Exception) {
-            e.printStackTrace()
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        if (playlistInitialized) {
+            jcPlayerManager.jcPlayerManagerListener = this
+            resume()
         }
+    }
+
+    override fun onDetachedFromWindow() {
+        if (playlistInitialized) jcPlayerManager.removeListener(this)
+        super.onDetachedFromWindow()
     }
 
     override fun onContinueAudio(status: JcStatus) {

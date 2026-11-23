@@ -45,6 +45,7 @@ class JcPlayerService : Service(), MediaPlayer.OnPreparedListener, MediaPlayer.O
     private var prepared = false
     private var preparing = false
     private var playWhenReady = false
+    private var completingTrack = false
     private var foregroundRequested = false
     private var inForeground = false
     private var destroyed = false
@@ -136,8 +137,15 @@ class JcPlayerService : Service(), MediaPlayer.OnPreparedListener, MediaPlayer.O
         if (!ensureForeground()) {
             playWhenReady = false
             preparing = false
+            isPlaying = false
+            isPaused = true
+            abandonFocus()
+            unregisterNoisy()
+            publishState(force = true)
+            val status = snapshot(JcStatus.PlayState.PAUSE)
+            serviceListener?.onPausedListener(status)
             stopSelf()
-            return snapshot(JcStatus.PlayState.PAUSE)
+            return status
         }
         if (!requestFocus()) {
             playWhenReady = false
@@ -265,15 +273,26 @@ class JcPlayerService : Service(), MediaPlayer.OnPreparedListener, MediaPlayer.O
 
     override fun onCompletion(player: MediaPlayer) {
         if (mediaPlayer !== player || destroyed) return
+        val continueQueue = playWhenReady && focusHeld && isPlaying
         playWhenReady = false
         isPlaying = false
         isPaused = true
         resumeAfterFocusLoss = false
         handler.removeCallbacks(progressTick)
-        abandonFocus()
-        unregisterNoisy()
-        publishState(force = true)
-        serviceListener?.onCompletedListener()
+        // Keep the existing foreground service and audio focus while the manager
+        // chooses the next track. Demoting here would require a background FGS restart.
+        completingTrack = continueQueue
+        try {
+            if (continueQueue) serviceListener?.onCompletedListener()
+        } finally { completingTrack = false }
+        // No replacement/replay was requested: release resources and publish a
+        // terminal paused snapshot, including after a late completion following pause.
+        if (mediaPlayer === player && !isPlaying && !preparing) {
+            abandonFocus()
+            unregisterNoisy()
+            publishState(force = true)
+            serviceListener?.onPausedListener(snapshot(JcStatus.PlayState.PAUSE))
+        }
     }
 
     override fun onSeekComplete(player: MediaPlayer) {
@@ -360,7 +379,7 @@ class JcPlayerService : Service(), MediaPlayer.OnPreparedListener, MediaPlayer.O
     }
 
     private fun publishNotification(notification: Notification) {
-        val needsForeground = foregroundRequested || isPlaying || (preparing && playWhenReady) || resumeAfterFocusLoss
+        val needsForeground = foregroundRequested || completingTrack || isPlaying || (preparing && playWhenReady) || resumeAfterFocusLoss
         if (needsForeground && !inForeground) {
             if (Build.VERSION.SDK_INT >= 29) startForeground(JcNotificationPlayer.NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
             else startForeground(JcNotificationPlayer.NOTIFICATION_ID, notification)

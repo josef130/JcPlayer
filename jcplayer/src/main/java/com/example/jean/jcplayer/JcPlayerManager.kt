@@ -46,6 +46,14 @@ private constructor(private val serviceConnection: JcServiceConnection) : JcPlay
     var currentStatus: JcStatus? = null
         private set
 
+    /** Queue advancement belongs to the manager, even with no attached view. */
+    var autoAdvance: Boolean = true
+
+    fun removeListener(listener: JcPlayerManagerListener) {
+        managerListeners.remove(listener)
+        if (jcPlayerManagerListener === listener) jcPlayerManagerListener = null
+    }
+
     var onShuffleMode: Boolean = false
 
     var repeatPlaylist: Boolean = false
@@ -279,8 +287,16 @@ private constructor(private val serviceConnection: JcServiceConnection) : JcPlay
     }
 
     override fun onCompletedListener() {
-        for (listener in managerListeners) {
-            listener.onCompletedAudio()
+        val service = jcPlayerService ?: return
+        val completedPlayer = service.getMediaPlayer()
+        val completedAudio = service.currentAudio
+        for (listener in managerListeners) listener.onCompletedAudio()
+        // A host completion callback may already have stopped/replayed/replaced
+        // the track. Advance once only when the completed player is still current.
+        if (autoAdvance && jcPlayerService === service && service.getMediaPlayer() === completedPlayer
+                && service.currentAudio === completedAudio && !service.isPlaying) {
+            try { nextAudio() }
+            catch (error: AudioListNullPointerException) { service.stop(); notifyError(error) }
         }
     }
 

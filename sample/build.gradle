@@ -7,8 +7,8 @@ android {
         applicationId "com.example.jean.jcplayersample"
         minSdkVersion 14
         targetSdkVersion 34
-        versionCode 9
-        versionName "2.8.1"
+        versionCode 10
+        versionName "2.8.2"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {

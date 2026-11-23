@@ -1,3 +1,11 @@
+# 2.8.2 (pre-release)
+
+- Keep the foreground media service and audio focus active while a completed track is replaced or replayed. Avoid a background foreground-service restart at each track boundary.
+- Move automatic queue advancement from JcPlayerView into JcPlayerManager. Continue without an attached Activity or player view, and prevent duplicate advancement from multiple views.
+- Preserve host completion callbacks that already stop, replay or select another track; provide an autoAdvance opt-out.
+- Unregister detached views and add removeListener for external Activity callbacks without stopping playback.
+- Publish a fresh paused status when foreground startup fails, avoiding a stale preparing/loading state.
+- Add regression coverage for screen-off playback, destroyed/detached UI, repeat modes, queue completion and user pause.
 # 2.8.1 (pre-release)
 
 - Supply a large white music-note placeholder as system media artwork, including the lock screen. Reuse one fixed 256x256 bitmap for notification and session metadata; never decode full-size application artwork on progress updates.
