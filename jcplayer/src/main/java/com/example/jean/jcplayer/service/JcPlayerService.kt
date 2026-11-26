@@ -309,8 +309,21 @@ class JcPlayerService : Service(), MediaPlayer.OnPreparedListener, MediaPlayer.O
     }
 
     private fun playbackError(error: Exception) {
-        stop()
-        serviceListener?.onError(error)
+        val failedAudio = currentAudio
+        val failure = com.example.jean.jcplayer.general.errors.JcPlaybackException(failedAudio, error)
+        playWhenReady = false
+        resumeAfterFocusLoss = false
+        releasePlayer()
+        abandonFocus()
+        unregisterNoisy()
+        // Retain the foreground session until listeners can choose a replacement.
+        // Stopping it first can make background recovery a forbidden new FGS start.
+        publishState(force = true)
+        serviceListener?.onError(failure)
+        handler.post {
+            // Hosts that do not handle errors keep the previous stop-on-error behavior.
+            if (currentAudio === failedAudio && mediaPlayer == null) stop()
+        }
     }
 
     private fun mediaAttributes(): AudioAttributes = AudioAttributes.Builder()

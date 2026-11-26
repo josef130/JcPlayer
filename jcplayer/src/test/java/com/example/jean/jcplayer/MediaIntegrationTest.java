@@ -86,6 +86,33 @@ public class MediaIntegrationTest {
         return Shadows.shadowOf((NotificationManager) service.getSystemService(Context.NOTIFICATION_SERVICE)).getNotification(100);
     }
 
+    @Test public void mediaErrorsRetainSourceAndAllowRecoveryWithoutAnActivity() {
+        JcPlayerManager manager=JcPlayerManager.getInstance(activity,null,null).get();idle(1);
+        manager.setPlaylist(new ArrayList<>(java.util.Arrays.asList(first,second)));
+        Throwable[] received={null};
+        manager.setJcPlayerManagerListener(new ListenerAdapter(){
+            @Override public void onJcpError(Throwable error){received[0]=error;}
+        });
+        manager.playAudio(first);idle(20);
+        activityController.pause().stop().destroy();
+        service.onError(service.getMediaPlayer(),android.media.MediaPlayer.MEDIA_ERROR_UNKNOWN,0);
+        assertTrue(received[0] instanceof com.example.jean.jcplayer.general.errors.JcPlaybackException);
+        com.example.jean.jcplayer.general.errors.JcPlaybackException error=
+            (com.example.jean.jcplayer.general.errors.JcPlaybackException)received[0];
+        assertSame(first,error.getAudio());assertTrue(error.getCause() instanceof IllegalStateException);
+        assertFalse(error.getMessage().contains(FIRST));assertSame(first,manager.getCurrentAudio());
+        manager.playAudio(second);idle(20);
+        assertTrue(service.isPlaying());assertSame(second,manager.getCurrentAudio());
+    }
+
+    @Test public void unhandledMediaErrorStopsTheForegroundServiceOnTheNextMainTurn() {
+        start();
+        service.onError(service.getMediaPlayer(),android.media.MediaPlayer.MEDIA_ERROR_UNKNOWN,0);
+        idle(1);
+        assertNull(service.getCurrentAudio());assertNull(service.getMediaPlayer());assertFalse(service.isPlaying());
+        assertNull(notification());
+    }
+
     @Test public void filteredQueueNextUsesCurrentTrackAndKeepsTheSessionAfterSameSongSelection() {
         JcAudio third=JcAudio.createFromURL("Third song","https://example.com/jc-third.mp3");
         ShadowMediaPlayer.addMediaInfo(DataSource.toDataSource(third.getPath()),new ShadowMediaPlayer.MediaInfo(90000,10));
