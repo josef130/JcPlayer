@@ -83,10 +83,41 @@ public class MediaIntegrationTest {
     }
     private void idle(long millis) { Shadows.shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(millis)); }
     private Notification notification() {
-        return Shadows.shadowOf((NotificationManager) activity.getSystemService(Context.NOTIFICATION_SERVICE)).getNotification(100);
+        return Shadows.shadowOf((NotificationManager) service.getSystemService(Context.NOTIFICATION_SERVICE)).getNotification(100);
     }
 
-    @Test public void playingUsesForegroundServiceAndSystemMediaStyleWithSessionToken() {
+    @Test public void filteredQueueNextUsesCurrentTrackAndKeepsTheSessionAfterSameSongSelection() {
+        JcAudio third=JcAudio.createFromURL("Third song","https://example.com/jc-third.mp3");
+        ShadowMediaPlayer.addMediaInfo(DataSource.toDataSource(third.getPath()),new ShadowMediaPlayer.MediaInfo(90000,10));
+        JcPlayerManager manager=JcPlayerManager.getInstance(activity,null,null).get();idle(1);
+        manager.setPlaylist(new ArrayList<>(java.util.Arrays.asList(first,second,third)));
+        manager.playAudio(second);idle(20);
+        android.media.MediaPlayer original=service.getMediaPlayer();
+        Object token=service.getMediaSessionToken().getToken();
+        JcAudio secondInFavorites=JcAudio.createFromURL(second.getTitle(),second.getPath());secondInFavorites.setPosition(0);
+        JcAudio thirdInFavorites=JcAudio.createFromURL(third.getTitle(),third.getPath());thirdInFavorites.setPosition(1);
+        manager.setPlaylist(new ArrayList<>(java.util.Arrays.asList(secondInFavorites,thirdInFavorites)));
+        manager.playAudio(secondInFavorites);idle(1);
+        assertSame(original,service.getMediaPlayer());assertEquals(token,service.getMediaSessionToken().getToken());
+        manager.nextAudio();idle(20);
+        assertSame(thirdInFavorites,service.getCurrentAudio());assertTrue(service.isPlaying());
+    }
+    @Test public void filteredQueuePreviousUsesTheNewIndexAfterPausedSongSelection() {
+        JcAudio third=JcAudio.createFromURL("Third song","https://example.com/jc-third.mp3");
+        ShadowMediaPlayer.addMediaInfo(DataSource.toDataSource(third.getPath()),new ShadowMediaPlayer.MediaInfo(90000,10));
+        JcPlayerManager manager=JcPlayerManager.getInstance(activity,null,null).get();idle(1);
+        manager.setPlaylist(new ArrayList<>(java.util.Arrays.asList(first,second,third)));
+        manager.playAudio(third);idle(20);service.pause(third);
+        android.media.MediaPlayer original=service.getMediaPlayer();
+        JcAudio firstInFavorites=JcAudio.createFromURL(first.getTitle(),first.getPath());firstInFavorites.setPosition(0);
+        JcAudio thirdInFavorites=JcAudio.createFromURL(third.getTitle(),third.getPath());thirdInFavorites.setPosition(1);
+        manager.setPlaylist(new ArrayList<>(java.util.Arrays.asList(firstInFavorites,thirdInFavorites)));
+        manager.playAudio(thirdInFavorites);idle(1);
+        assertSame(original,service.getMediaPlayer());
+        manager.previousAudio();idle(1);
+        assertSame(firstInFavorites,service.getCurrentAudio());
+        manager.nextAudio();idle(20);assertSame(thirdInFavorites,service.getCurrentAudio());
+    }    @Test public void playingUsesForegroundServiceAndSystemMediaStyleWithSessionToken() {
         start();
         assertTrue(session.isActive());
         Notification posted = Shadows.shadowOf(service).getLastForegroundNotification();

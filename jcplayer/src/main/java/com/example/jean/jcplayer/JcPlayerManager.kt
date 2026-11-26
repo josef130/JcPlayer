@@ -236,6 +236,7 @@ private constructor(private val serviceConnection: JcServiceConnection) : JcPlay
 
 
     private fun getNextAudio(): JcAudio? {
+        updatePositionAudioList() // A host may have replaced the queue while this track stayed current.
         return if (onShuffleMode) {
             playlist[Random().nextInt(playlist.size)]
         } else {
@@ -252,6 +253,7 @@ private constructor(private val serviceConnection: JcServiceConnection) : JcPlay
     }
 
     private fun getPreviousAudio(): JcAudio {
+        updatePositionAudioList()
         return if (onShuffleMode) {
             playlist[Random().nextInt(playlist.size)]
         } else {

@@ -1,3 +1,8 @@
+# 2.8.4 (pre-release)
+
+- Re-synchronize next/previous queue navigation with the current audio after queue replacement.
+- Fix navigation after selecting/resuming the same song in a filtered playlist, preserving the existing media session and player.
+- Add Android 12/14 regressions for playing and paused queue changes; preserve 2.8.3 artwork and background playback behavior.
 # 2.8.3 (pre-release)
 
 - Add optional per-track JcArtworkProvider for shared MediaSession/notification artwork, configured without starting a player.
